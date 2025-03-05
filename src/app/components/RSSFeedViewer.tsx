@@ -41,6 +41,7 @@ export default function RSSFeedViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
+  const [stagedCategories, setStagedCategories] = useState<string[]>([]); // Categories staged for blocking
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false); // Collapsed by default
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -115,22 +116,44 @@ export default function RSSFeedViewer({
     setFilteredItems(filtered);
   }, [feed, blockedCategories]);
 
-  // Add a category to the block list
-  const blockCategory = async (category: string) => {
-    if (!blockedCategories.includes(category)) {
-      const newBlockedCategories = [...blockedCategories, category];
-      setBlockedCategories(newBlockedCategories);
+  // Stage a category for blocking (doesn't apply immediately)
+  const stageCategory = (category: string) => {
+    if (!blockedCategories.includes(category) && !stagedCategories.includes(category)) {
+      setStagedCategories([...stagedCategories, category]);
+    }
+  };
 
-      // Save to localStorage and/or Supabase
-      try {
-        if (user) {
-          await saveBlockedCategories(user.id, newBlockedCategories);
-        } else {
-          localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
-        }
-      } catch (err) {
-        console.error('Error saving blocked category:', err);
+  // Remove a category from the staged list
+  const unstageCategoryToggle = (category: string) => {
+    if (stagedCategories.includes(category)) {
+      setStagedCategories(stagedCategories.filter((c) => c !== category));
+    } else {
+      setStagedCategories([...stagedCategories, category]);
+    }
+  };
+
+  // Apply all staged categories to the block list
+  const applyBlockedCategories = async () => {
+    if (stagedCategories.length === 0) return;
+
+    // Combine existing and new blocked categories
+    const newBlockedCategories = [
+      ...blockedCategories,
+      ...stagedCategories.filter((c) => !blockedCategories.includes(c)),
+    ];
+
+    setBlockedCategories(newBlockedCategories);
+    setStagedCategories([]); // Clear staged categories
+
+    // Save to localStorage and/or Supabase
+    try {
+      if (user) {
+        await saveBlockedCategories(user.id, newBlockedCategories);
+      } else {
+        localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
       }
+    } catch (err) {
+      console.error('Error saving blocked categories:', err);
     }
   };
 
@@ -241,6 +264,53 @@ export default function RSSFeedViewer({
         </div>
       )}
 
+      {/* Staged Categories Banner - shows when categories are staged for blocking */}
+      {stagedCategories.length > 0 && (
+        <div className="sticky top-0 z-10 mb-4 p-3 bg-amber-100 dark:bg-amber-900/40 rounded-md shadow-md">
+          <div className="flex flex-wrap gap-1 mb-2">
+            <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              Categories staged for blocking:
+            </span>
+            {stagedCategories.map((category, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center bg-amber-200 dark:bg-amber-700 text-amber-800 dark:text-amber-200 text-xs px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80"
+                onClick={() => unstageCategoryToggle(category)}
+                title="Click to remove from staging"
+              >
+                {category}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-3 w-3 ml-1"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </span>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setStagedCategories([])}
+              className="text-xs text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 px-3 py-1 rounded hover:opacity-80"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={applyBlockedCategories}
+              className="text-xs text-white bg-blue-500 px-3 py-1 rounded hover:bg-blue-600"
+            >
+              Apply Blocks
+            </button>
+          </div>
+        </div>
+      )}
+
       {feed && (
         <div>
           <div className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -271,10 +341,12 @@ export default function RSSFeedViewer({
                             className={`inline-block text-xs px-2 py-0.5 rounded-full cursor-pointer ${
                               blockedCategories.includes(category)
                                 ? 'bg-[var(--blocked-tag-bg)] text-[var(--blocked-tag-text)]'
-                                : 'bg-[var(--category-bg)] text-[var(--category-text)] hover:opacity-80'
+                                : stagedCategories.includes(category)
+                                  ? 'bg-amber-200 dark:bg-amber-700 text-amber-800 dark:text-amber-200'
+                                  : 'bg-[var(--category-bg)] text-[var(--category-text)] hover:opacity-80'
                             }`}
-                            onClick={() => blockCategory(category)}
-                            title="Click to block this category"
+                            onClick={() => stageCategory(category)}
+                            title="Click to stage this category for blocking"
                           >
                             {category}
                           </span>
