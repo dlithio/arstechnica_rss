@@ -1,9 +1,10 @@
 // Import the necessary ESLint plugins
+import { FlatCompat } from '@eslint/eslintrc';
 import eslintPluginJestDom from 'eslint-plugin-jest-dom';
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks';
 import eslintPluginSimpleImportSort from 'eslint-plugin-simple-import-sort';
 import eslintPluginTestingLibrary from 'eslint-plugin-testing-library';
-import { FlatCompat } from '@eslint/eslintrc';
+import eslintPluginUnusedImports from 'eslint-plugin-unused-imports';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -11,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
-export default [
+const config = [
   {
     // Define global configuration
     ignores: ['node_modules/**', '.next/**', 'out/**'],
@@ -30,6 +31,7 @@ export default [
       'react-hooks': eslintPluginReactHooks,
       'testing-library': eslintPluginTestingLibrary,
       'jest-dom': eslintPluginJestDom,
+      'unused-imports': eslintPluginUnusedImports,
     },
     rules: {
       // Import sorting
@@ -59,7 +61,17 @@ export default [
       'jest-dom/prefer-to-have-class': 'error',
       'jest-dom/prefer-to-have-style': 'error',
       'jest-dom/prefer-to-have-text-content': 'error',
-      'jest-dom/prefer-to-have-value': 'error'
+      'jest-dom/prefer-to-have-value': 'error',
+      
+      // Unused imports
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }
+      ]
     }
   }
 ];
+
+export default config;
+

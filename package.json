@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "test": "jest",
-    "find-deadcode": "eslint --max-warnings=0 --ext .js,.jsx,.ts,.tsx --rule 'unused-imports/no-unused-imports: error' .",
+    "find-deadcode": "eslint --max-warnings=0 .",
     "stylelint": "stylelint --fix \"**/*.css\" || true",
     "validate:all": "npm run typecheck && npm run format && npm run stylelint && npm run test && npm run lint",
     "check:all": "git add . && npm run typecheck && npm run format && npm run stylelint && npm run test && npm run lint"
