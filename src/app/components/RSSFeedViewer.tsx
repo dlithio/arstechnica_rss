@@ -4,12 +4,36 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getLatestBlockedCategories, saveBlockedCategories } from '../services/blockedCategories';
 import { fetchRSSFeed, DEFAULT_FEED_URL } from '../services/feedService';
+import {
+  getLastVisitTime,
+  updateLastVisitTime,
+  getLastVisitFromLocalStorage,
+} from '../services/lastVisitService';
 import { Feed, FeedItem } from '../../types/feed';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
 import FeedItemComponent from './FeedItem';
 import ThemeToggle from './ThemeToggle';
 import StagedCategoriesBanner from './StagedCategoriesBanner';
 import BlockedCategoriesManager from './BlockedCategoriesManager';
+
+// Helper function to format relative time
+const formatRelativeTime = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  // Convert to minutes and hours
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  } else if (minutes === 0) {
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  } else {
+    return `${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+};
 
 export default function RSSFeedViewer() {
   const { user } = useAuth();
@@ -23,6 +47,13 @@ export default function RSSFeedViewer() {
   const [stagedCategories, setStagedCategories] = useState<string[]>([]); // Categories staged for blocking
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [syncingPreferences, setSyncingPreferences] = useState(false);
+  // Initialize lastVisit with localStorage data immediately
+  const [lastVisit, setLastVisit] = useState<Date | null>(() => {
+    if (typeof window !== 'undefined') {
+      return getLastVisitFromLocalStorage();
+    }
+    return null;
+  });
 
   // Load blocked categories from Supabase or localStorage
   useEffect(() => {
@@ -64,8 +95,26 @@ export default function RSSFeedViewer() {
       return !item.categories.some((category) => blockedCategories.includes(category));
     });
 
-    setFilteredItems(filtered);
-  }, [feed, blockedCategories]);
+    // Sort items based on pubDate and seen status
+    const sorted = [...filtered].sort((a, b) => {
+      if (!a.pubDate || !b.pubDate) return 0;
+
+      const dateA = new Date(a.pubDate);
+      const dateB = new Date(b.pubDate);
+
+      // Check if items are seen or not
+      const aIsSeen = lastVisit ? dateA < lastVisit : false;
+      const bIsSeen = lastVisit ? dateB < lastVisit : false;
+
+      // New items first, then by date (newest to oldest)
+      if (aIsSeen !== bIsSeen) {
+        return aIsSeen ? 1 : -1; // New items (not seen) first
+      }
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+
+    setFilteredItems(sorted);
+  }, [feed, blockedCategories, lastVisit]);
 
   // Stage a category for blocking (doesn't apply immediately)
   const stageCategory = (category: string) => {
@@ -142,13 +191,20 @@ export default function RSSFeedViewer() {
     }
   };
 
-  const fetchFeed = useCallback(async () => {
+  const fetchFeed = useCallback(async (resetVisitTime = false) => {
     setLoading(true);
     setError('');
 
     try {
       const data = await fetchRSSFeed(DEFAULT_FEED_URL);
       setFeed(data);
+
+      // If resetVisitTime is true, update the last visit time
+      if (resetVisitTime) {
+        await updateLastVisitTime();
+        const updatedTime = await getLastVisitTime();
+        setLastVisit(updatedTime);
+      }
     } catch (err) {
       setError('Error fetching RSS feed. Please try again later.');
       console.error(err);
@@ -157,10 +213,31 @@ export default function RSSFeedViewer() {
     }
   }, []);
 
+  // Load last visit time
+  useEffect(() => {
+    async function loadLastVisitTime() {
+      try {
+        const lastVisitTime = await getLastVisitTime();
+        setLastVisit(lastVisitTime);
+      } catch (err) {
+        console.error('Error loading last visit time:', err);
+      }
+    }
+
+    loadLastVisitTime();
+  }, [user]);
+
   // Auto-fetch feed on initial load
   useEffect(() => {
     fetchFeed();
   }, [fetchFeed]);
+
+  // Update last visit time when component mounts
+  useEffect(() => {
+    if (mounted) {
+      updateLastVisitTime().catch((err) => console.error('Error updating last visit time:', err));
+    }
+  }, [mounted]);
 
   // After mounting, render is safe
   useEffect(() => {
@@ -178,7 +255,7 @@ export default function RSSFeedViewer() {
       {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
       {!loading && !error && !feed && (
         <button
-          onClick={fetchFeed}
+          onClick={() => fetchFeed()}
           className="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Reload Feed
@@ -202,6 +279,7 @@ export default function RSSFeedViewer() {
                 blockedCategories={blockedCategories}
                 stagedCategories={stagedCategories}
                 stageCategory={stageCategory}
+                lastVisit={lastVisit}
               />
             ))}
           </div>
@@ -217,6 +295,14 @@ export default function RSSFeedViewer() {
               >
                 Clear all filters
               </button>
+            </div>
+          )}
+
+          {lastVisit && (
+            <div className="text-center my-6 py-2 border-t border-b border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-[var(--text-secondary)]">
+                Last Visit: {formatRelativeTime(lastVisit)}
+              </span>
             </div>
           )}
 

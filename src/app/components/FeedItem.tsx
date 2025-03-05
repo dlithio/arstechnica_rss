@@ -7,6 +7,7 @@ type FeedItemProps = {
   blockedCategories: string[];
   stagedCategories: string[];
   stageCategory: (category: string) => void;
+  lastVisit: Date | null;
 };
 
 export default function FeedItem({
@@ -14,15 +15,30 @@ export default function FeedItem({
   blockedCategories,
   stagedCategories,
   stageCategory,
+  lastVisit,
 }: FeedItemProps) {
+  const isPreviouslySeen = (): boolean => {
+    if (!lastVisit || !item.pubDate) return false;
+    const pubDate = new Date(item.pubDate);
+    return pubDate < lastVisit;
+  };
+
+  const seen = isPreviouslySeen();
   return (
-    <article className="py-4">
-      <h3 className="text-xl font-semibold mb-2">
+    <article
+      className={`py-4 ${seen ? 'opacity-60 hover:opacity-100 transition-opacity border-l-4 border-l-gray-300 dark:border-l-gray-600 pl-2' : ''}`}
+    >
+      <h3 className="text-xl font-semibold mb-2 flex items-center">
+        {seen && (
+          <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded mr-2">
+            Seen
+          </span>
+        )}
         <a
           href={item.link}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[var(--blue-link)] hover:text-[var(--blue-hover)] hover:underline"
+          className={`hover:text-[var(--blue-hover)] hover:underline ${seen ? 'text-[var(--text-secondary)]' : 'text-[var(--blue-link)]'}`}
         >
           {item.title}
         </a>
