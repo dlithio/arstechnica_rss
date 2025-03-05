@@ -19,8 +19,10 @@ type Feed = {
 };
 
 export default function RSSFeedViewer() {
-  // Initialize state from localStorage if available, otherwise use defaults
-  const [feedUrl, setFeedUrl] = useState('');
+  // Hardcoded Ars Technica feed URL
+  const FEED_URL = "https://feeds.arstechnica.com/arstechnica/index";
+  
+  // Initialize state
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,12 +33,6 @@ export default function RSSFeedViewer() {
   useEffect(() => {
     // Use try-catch to handle potential localStorage errors
     try {
-      // Load feed URL
-      const savedUrl = localStorage.getItem('rssViewerFeedUrl');
-      if (savedUrl) {
-        setFeedUrl(savedUrl);
-      }
-      
       // Load blocked categories
       const savedBlockedCategories = localStorage.getItem('rssViewerBlockedCategories');
       if (savedBlockedCategories) {
@@ -99,24 +95,13 @@ export default function RSSFeedViewer() {
   };
 
   const fetchFeed = useCallback(async () => {
-    if (!feedUrl) {
-      setError('Please enter a valid RSS feed URL');
-      return;
-    }
-
-    // Save feed URL to localStorage
-    localStorage.setItem('rssViewerFeedUrl', feedUrl);
-
     setLoading(true);
     setError('');
-    
-    // Don't reset blocked categories when loading a new feed now that we're persisting them
-    // We want users to keep their blocked categories across different feeds
     
     try {
       // We need to use a server action or API route because RSS-Parser is a Node.js library
       // and can't run directly in the browser due to CORS restrictions
-      const response = await fetch(`/api/fetchRSS?url=${encodeURIComponent(feedUrl)}`);
+      const response = await fetch(`/api/fetchRSS?url=${encodeURIComponent(FEED_URL)}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch RSS feed');
@@ -128,44 +113,32 @@ export default function RSSFeedViewer() {
       // Save feed data to localStorage
       localStorage.setItem('rssViewerFeedData', JSON.stringify(data));
     } catch (err) {
-      setError('Error fetching RSS feed. Please check the URL and try again.');
+      setError('Error fetching RSS feed. Please try again later.');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [feedUrl]);
+  }, [FEED_URL]);
   
-  // Auto-fetch feed on initial load if we have a saved URL
+  // Auto-fetch feed on initial load
   useEffect(() => {
-    if (feedUrl && !feed && !loading) {
-      fetchFeed();
-    }
-  }, [feedUrl, feed, loading, fetchFeed]);
+    fetchFeed();
+  }, [fetchFeed]);
 
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="mb-6">
-        <label htmlFor="feed-url" className="block text-sm font-medium mb-2">
-          Enter RSS Feed URL
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="feed-url"
-            type="url"
-            value={feedUrl}
-            onChange={(e) => setFeedUrl(e.target.value)}
-            placeholder="https://example.com/feed.xml"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <h1 className="text-2xl font-bold mb-2">Ars Technica Feed</h1>
+        {loading && <p className="text-gray-600">Loading feed...</p>}
+        {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
+        {!loading && !error && !feed && (
           <button
             onClick={fetchFeed}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {loading ? 'Loading...' : 'Load Feed'}
+            Reload Feed
           </button>
-        </div>
-        {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
+        )}
       </div>
 
       {/* Blocked Categories section */}
