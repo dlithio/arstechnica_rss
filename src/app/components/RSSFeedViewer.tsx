@@ -22,7 +22,7 @@ type Feed = {
 export default function RSSFeedViewer() {
   // Hardcoded Ars Technica feed URL
   const FEED_URL = 'https://feeds.arstechnica.com/arstechnica/index';
-  
+
   // Theme handling
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -35,12 +35,12 @@ export default function RSSFeedViewer() {
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false); // Collapsed by default
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  
+
   // Theme toggle
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-  
+
   // Toggle blocked categories visibility
   const toggleBlockedCategories = () => {
     setIsBlockedCategoriesOpen(!isBlockedCategoriesOpen);
@@ -107,13 +107,13 @@ export default function RSSFeedViewer() {
     if (e) e.stopPropagation();
     setShowClearConfirm(true);
   };
-  
+
   // Handle canceling the clear confirmation
   const handleCancelClear = (e: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setShowClearConfirm(false);
   };
-  
+
   // Clear all blocked categories
   const clearBlockedCategories = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -153,7 +153,7 @@ export default function RSSFeedViewer() {
   useEffect(() => {
     fetchFeed();
   }, [fetchFeed]);
-  
+
   // After mounting, render is safe
   useEffect(() => {
     setMounted(true);
@@ -228,7 +228,9 @@ export default function RSSFeedViewer() {
 
           {feed.items.length > 0 && filteredItems.length === 0 && (
             <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-[var(--text-secondary)]">All items are filtered due to blocked categories.</p>
+              <p className="text-[var(--text-secondary)]">
+                All items are filtered due to blocked categories.
+              </p>
               <button
                 onClick={clearBlockedCategories}
                 className="mt-2 text-[var(--blue-link)] hover:text-[var(--blue-hover)] hover:underline text-sm"
@@ -242,7 +244,7 @@ export default function RSSFeedViewer() {
           {blockedCategories.length > 0 && (
             <div className="mt-10 rounded-lg border border-[var(--blocked-border)] bg-[var(--blocked-bg)] shadow-sm">
               {/* Header - always visible */}
-              <div 
+              <div
                 className="flex justify-between items-center p-3 cursor-pointer hover:bg-opacity-80"
                 onClick={toggleBlockedCategories}
               >
@@ -256,27 +258,31 @@ export default function RSSFeedViewer() {
                       `${feed.items.length - filteredItems.length} items hidden`}
                   </p>
                 </div>
-                
+
                 {/* Chevron icon */}
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor" 
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                   className={`text-[var(--blocked-text)] transition-transform duration-300 ${isBlockedCategoriesOpen ? 'rotate-180' : ''}`}
                 >
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
-              
+
               {/* Collapsible content */}
-              <div 
+              <div
                 style={{
                   maxHeight: isBlockedCategoriesOpen ? '500px' : '0',
                   opacity: isBlockedCategoriesOpen ? 1 : 0,
                   overflow: 'hidden',
-                  transition: 'max-height 0.3s ease, opacity 0.3s ease'
+                  transition: 'max-height 0.3s ease, opacity 0.3s ease',
                 }}
               >
                 <div className="px-4 pb-4">
@@ -304,7 +310,7 @@ export default function RSSFeedViewer() {
                       </span>
                     ))}
                   </div>
-                  
+
                   {/* Clear All Button */}
                   {!showClearConfirm ? (
                     <div className="flex justify-center">
@@ -343,54 +349,66 @@ export default function RSSFeedViewer() {
         </div>
       )}
 
-      {/* Theme Toggle Button - Fixed at bottom */}
-      <button
-        onClick={toggleTheme}
-        className="fixed bottom-4 right-4 p-3 rounded-full bg-gray-200 dark:bg-gray-700 hover:opacity-80 transition-colors"
-        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      >
-        {theme === 'dark' ? (
-          // Sun icon for dark mode
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="text-yellow-300"
-          >
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-        ) : (
-          // Moon icon for light mode
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="text-indigo-900"
-          >
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        )}
-      </button>
+      {/* Only the central theme toggle */}
+      <div className="flex justify-center my-8">
+        {/* Simple theme toggle switch with dot that moves */}
+        <div
+          onClick={toggleTheme}
+          className="w-16 h-8 bg-gray-200 dark:bg-gray-800 rounded-full shadow-inner flex items-center px-1 cursor-pointer relative overflow-hidden"
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {/* Sun icon (always visible) */}
+          <div className="absolute left-1.5 flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-yellow-600"
+            >
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </div>
+
+          {/* Moon icon (always visible) */}
+          <div className="absolute right-1.5 flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-indigo-900"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </div>
+
+          {/* The moving slider dot */}
+          <div
+            className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${
+              theme === 'dark' ? 'translate-x-8' : 'translate-x-0'
+            }`}
+          ></div>
+        </div>
+      </div>
     </div>
   );
 }
