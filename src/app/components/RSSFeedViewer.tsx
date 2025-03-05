@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Parser from 'rss-parser';
+import { useState, useEffect, useCallback } from 'react';
 
 type FeedItem = {
   title?: string;
@@ -99,7 +98,7 @@ export default function RSSFeedViewer() {
     localStorage.setItem('rssViewerBlockedCategories', JSON.stringify([]));
   };
 
-  const fetchFeed = async () => {
+  const fetchFeed = useCallback(async () => {
     if (!feedUrl) {
       setError('Please enter a valid RSS feed URL');
       return;
@@ -134,14 +133,14 @@ export default function RSSFeedViewer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [feedUrl]);
   
   // Auto-fetch feed on initial load if we have a saved URL
   useEffect(() => {
     if (feedUrl && !feed && !loading) {
       fetchFeed();
     }
-  }, [feedUrl, feed, loading]);
+  }, [feedUrl, feed, loading, fetchFeed]);
 
   return (
     <div className="w-full max-w-3xl mx-auto">
