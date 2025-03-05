@@ -21,13 +21,9 @@ type Feed = {
   items: FeedItem[];
 };
 
-type RSSFeedViewerProps = {
-  showSyncMessage?: boolean;
-};
+// Component doesn't need props
 
-export default function RSSFeedViewer({
-  showSyncMessage: syncMessageProp = false,
-}: RSSFeedViewerProps) {
+export default function RSSFeedViewer() {
   // Hardcoded Ars Technica feed URL
   const FEED_URL = 'https://feeds.arstechnica.com/arstechnica/index';
 
@@ -46,7 +42,6 @@ export default function RSSFeedViewer({
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false); // Collapsed by default
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [syncingPreferences, setSyncingPreferences] = useState(false);
-  const [showSyncMessage, setShowSyncMessage] = useState(syncMessageProp);
 
   // Theme toggle
   const toggleTheme = () => {
@@ -58,16 +53,7 @@ export default function RSSFeedViewer({
     setIsBlockedCategoriesOpen(!isBlockedCategoriesOpen);
   };
 
-  // Handle sync message auto-hide
-  useEffect(() => {
-    if (syncMessageProp) {
-      setShowSyncMessage(true);
-      const timer = setTimeout(() => {
-        setShowSyncMessage(false);
-      }, 3000); // Show for 3 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [syncMessageProp]);
+  // Sync message functionality removed
 
   // Load blocked categories from Supabase or localStorage
   useEffect(() => {
@@ -257,13 +243,6 @@ export default function RSSFeedViewer({
           Reload Feed
         </button>
       )}
-
-      {showSyncMessage && user && (
-        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm transition-opacity duration-300 ease-in-out">
-          Your blocked categories are synced across your devices.
-        </div>
-      )}
-
       {/* Staged Categories Banner - shows when categories are staged for blocking */}
       {stagedCategories.length > 0 && (
         <div className="sticky top-0 z-10 mb-4 p-3 bg-amber-100 dark:bg-amber-900/40 rounded-md shadow-md">

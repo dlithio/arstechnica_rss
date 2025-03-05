@@ -15,38 +15,14 @@ export default function Home() {
   const { user, isLoading, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [justLoggedIn, setJustLoggedIn] = useState(false);
-
-  // Track previous auth state to detect login event
-  const [prevAuthState, setPrevAuthState] = useState<{ user: boolean }>({ user: false });
+  // No longer tracking login status for sync message
 
   // Set mounted state after component mounts to avoid hydration errors
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Detect actual login event (not page refresh)
-  useEffect(() => {
-    if (!isLoading) {
-      const wasLoggedIn = prevAuthState.user;
-      const isLoggedIn = !!user;
-
-      // Only set justLoggedIn if user transitioned from logged out to logged in
-      if (!wasLoggedIn && isLoggedIn) {
-        setJustLoggedIn(true);
-
-        // Reset after 3 seconds (matching the component's timeout)
-        const timer = setTimeout(() => {
-          setJustLoggedIn(false);
-        }, 3000);
-
-        return () => clearTimeout(timer);
-      }
-
-      // Update previous auth state
-      setPrevAuthState({ user: isLoggedIn });
-    }
-  }, [user, isLoading, prevAuthState]);
+  // No longer detecting login events for sync message
 
   // Don't render anything until component is mounted and auth state is loaded
   if (!mounted || isLoading) {
@@ -75,7 +51,7 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <RSSFeedViewer showSyncMessage={justLoggedIn} />
+      <RSSFeedViewer />
 
       {/* Auth modal */}
       {showAuthModal && !user && (
