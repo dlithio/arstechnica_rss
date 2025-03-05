@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
+import { useAuth } from '../contexts/AuthContext';
+import { getLatestBlockedCategories, saveBlockedCategories } from '../services/blockedCategories';
 
 type FeedItem = {
   title?: string;
@@ -19,12 +21,19 @@ type Feed = {
   items: FeedItem[];
 };
 
-export default function RSSFeedViewer() {
+type RSSFeedViewerProps = {
+  showSyncMessage?: boolean;
+};
+
+export default function RSSFeedViewer({
+  showSyncMessage: syncMessageProp = false,
+}: RSSFeedViewerProps) {
   // Hardcoded Ars Technica feed URL
   const FEED_URL = 'https://feeds.arstechnica.com/arstechnica/index';
 
   // Theme handling
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   // Initialize state
@@ -35,6 +44,8 @@ export default function RSSFeedViewer() {
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false); // Collapsed by default
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [syncingPreferences, setSyncingPreferences] = useState(false);
+  const [showSyncMessage, setShowSyncMessage] = useState(syncMessageProp);
 
   // Theme toggle
   const toggleTheme = () => {
@@ -46,23 +57,43 @@ export default function RSSFeedViewer() {
     setIsBlockedCategoriesOpen(!isBlockedCategoriesOpen);
   };
 
-  // Load saved data from localStorage on initial render
+  // Handle sync message auto-hide
   useEffect(() => {
-    // Use try-catch to handle potential localStorage errors
-    try {
-      // Load blocked categories
-      const savedBlockedCategories = localStorage.getItem('rssViewerBlockedCategories');
-      if (savedBlockedCategories) {
-        setBlockedCategories(JSON.parse(savedBlockedCategories));
-      }
+    if (syncMessageProp) {
+      setShowSyncMessage(true);
+      const timer = setTimeout(() => {
+        setShowSyncMessage(false);
+      }, 3000); // Show for 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [syncMessageProp]);
 
-      // Load feed data
+  // Load blocked categories from Supabase or localStorage
+  useEffect(() => {
+    async function loadBlockedCategories() {
+      setSyncingPreferences(true);
+      try {
+        const categories = await getLatestBlockedCategories(user?.id);
+        setBlockedCategories(categories);
+      } catch (err) {
+        console.error('Error loading blocked categories:', err);
+      } finally {
+        setSyncingPreferences(false);
+      }
+    }
+
+    loadBlockedCategories();
+  }, [user]);
+
+  // Load feed data from localStorage on initial render
+  useEffect(() => {
+    try {
       const savedFeed = localStorage.getItem('rssViewerFeedData');
       if (savedFeed) {
         setFeed(JSON.parse(savedFeed));
       }
     } catch (err) {
-      console.error('Error loading from localStorage:', err);
+      console.error('Error loading feed from localStorage:', err);
     }
   }, []);
 
@@ -85,21 +116,39 @@ export default function RSSFeedViewer() {
   }, [feed, blockedCategories]);
 
   // Add a category to the block list
-  const blockCategory = (category: string) => {
+  const blockCategory = async (category: string) => {
     if (!blockedCategories.includes(category)) {
       const newBlockedCategories = [...blockedCategories, category];
       setBlockedCategories(newBlockedCategories);
-      // Save to localStorage
-      localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
+
+      // Save to localStorage and/or Supabase
+      try {
+        if (user) {
+          await saveBlockedCategories(user.id, newBlockedCategories);
+        } else {
+          localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
+        }
+      } catch (err) {
+        console.error('Error saving blocked category:', err);
+      }
     }
   };
 
   // Remove a category from the block list
-  const unblockCategory = (category: string) => {
+  const unblockCategory = async (category: string) => {
     const newBlockedCategories = blockedCategories.filter((c) => c !== category);
     setBlockedCategories(newBlockedCategories);
-    // Save to localStorage
-    localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
+
+    // Save to localStorage and/or Supabase
+    try {
+      if (user) {
+        await saveBlockedCategories(user.id, newBlockedCategories);
+      } else {
+        localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
+      }
+    } catch (err) {
+      console.error('Error removing blocked category:', err);
+    }
   };
 
   // Handle click on Clear All button
@@ -115,12 +164,21 @@ export default function RSSFeedViewer() {
   };
 
   // Clear all blocked categories
-  const clearBlockedCategories = (e?: React.MouseEvent) => {
+  const clearBlockedCategories = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setBlockedCategories([]);
     setShowClearConfirm(false);
-    // Save to localStorage
-    localStorage.setItem('rssViewerBlockedCategories', JSON.stringify([]));
+
+    // Save to localStorage and/or Supabase
+    try {
+      if (user) {
+        await saveBlockedCategories(user.id, []);
+      } else {
+        localStorage.setItem('rssViewerBlockedCategories', JSON.stringify([]));
+      }
+    } catch (err) {
+      console.error('Error clearing blocked categories:', err);
+    }
   };
 
   const fetchFeed = useCallback(async () => {
@@ -166,7 +224,7 @@ export default function RSSFeedViewer() {
 
   return (
     <div className="w-full max-w-3xl mx-auto relative pb-16">
-      {loading && <p className="text-secondary">Loading feed...</p>}
+      {(loading || syncingPreferences) && <p className="text-secondary">Loading...</p>}
       {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
       {!loading && !error && !feed && (
         <button
@@ -175,6 +233,12 @@ export default function RSSFeedViewer() {
         >
           Reload Feed
         </button>
+      )}
+
+      {showSyncMessage && user && (
+        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm transition-opacity duration-300 ease-in-out">
+          Your blocked categories are synced across your devices.
+        </div>
       )}
 
       {feed && (

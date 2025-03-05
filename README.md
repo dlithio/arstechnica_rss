@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ars Technica RSS Feed Reader
+
+A Next.js application that displays and filters RSS feed content from Ars Technica with user authentication and preference syncing using Supabase.
+
+## Features
+
+- Displays articles from the Ars Technica RSS feed
+- Category-based filtering to hide unwanted topics
+- User authentication (signup/login)
+- Syncs blocked categories across devices when logged in
+- Light/dark mode toggle
+- Responsive design
+
+## Technical Stack
+
+- Next.js 15.2 with App Router
+- React 19
+- TypeScript
+- Tailwind CSS
+- Supabase for authentication and database
+- RSS Parser for feed processing
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+ installed
+- A Supabase account and project
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Setup Instructions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   git clone <repository-url>
+   cd ars-test
+   ```
 
-## Learn More
+2. Install dependencies:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Configure environment variables:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - Create a `.env.local` file in the root directory
+   - Add your Supabase keys:
+     ```
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+     SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+     ```
 
-## Deploy on Vercel
+4. Set up the Supabase database:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   - Run the SQL migration script located in `supabase/migrations/` to create the blocked_categories table
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Run the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Database Schema
+
+The app uses a single table in Supabase:
+
+**blocked_categories**
+
+- `id`: UUID (primary key)
+- `user_id`: UUID (references auth.users)
+- `categories`: TEXT[] (array of blocked category names)
+- `created_at`: TIMESTAMPTZ
+- `updated_at`: TIMESTAMPTZ
