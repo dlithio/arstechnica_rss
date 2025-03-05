@@ -1,12 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { User } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://xuojaasyojcfnzwdvwnv.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../../lib/supabase';
 
 type UserProfileProps = {
   user: User;
