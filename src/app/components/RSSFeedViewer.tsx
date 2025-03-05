@@ -127,60 +127,19 @@ export default function RSSFeedViewer() {
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Ars Technica Feed</h1>
-        {loading && <p className="text-gray-600">Loading feed...</p>}
-        {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
-        {!loading && !error && !feed && (
-          <button
-            onClick={fetchFeed}
-            className="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Reload Feed
-          </button>
-        )}
-      </div>
-
-      {/* Blocked Categories section */}
-      {blockedCategories.length > 0 && (
-        <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-100">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium text-red-800">Blocked Categories</h3>
-            <button 
-              className="text-xs text-red-600 hover:text-red-800"
-              onClick={clearBlockedCategories}
-            >
-              Clear All
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {blockedCategories.map((category, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200"
-                onClick={() => unblockCategory(category)}
-                title="Click to unblock"
-              >
-                {category}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-red-600 mt-2">
-            {feed && filteredItems.length < feed.items.length && 
-              `${feed.items.length - filteredItems.length} items hidden due to blocked categories.`
-            }
-          </p>
-        </div>
+      {loading && <p className="text-gray-600">Loading feed...</p>}
+      {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
+      {!loading && !error && !feed && (
+        <button
+          onClick={fetchFeed}
+          className="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Reload Feed
+        </button>
       )}
 
       {feed && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-2">{feed.title}</h2>
-          <p className="text-gray-600 mb-6">{feed.description}</p>
-          
+        <div>          
           <div className="divide-y">
             {filteredItems.map((item, index) => (
               <article key={index} className="py-4">
@@ -237,6 +196,41 @@ export default function RSSFeedViewer() {
               >
                 Clear all filters
               </button>
+            </div>
+          )}
+          
+          {/* Blocked Categories section moved to bottom */}
+          {blockedCategories.length > 0 && (
+            <div className="mt-10 p-4 bg-red-50 rounded-lg border border-red-100">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-red-800">Blocked Categories</h3>
+                <button 
+                  className="text-xs text-red-600 hover:text-red-800"
+                  onClick={clearBlockedCategories}
+                >
+                  Clear All
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {blockedCategories.map((category, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full cursor-pointer hover:bg-red-200"
+                    onClick={() => unblockCategory(category)}
+                    title="Click to unblock"
+                  >
+                    {category}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-red-600 mt-2">
+                {feed && filteredItems.length < feed.items.length && 
+                  `${feed.items.length - filteredItems.length} items hidden due to blocked categories.`
+                }
+              </p>
             </div>
           )}
         </div>
