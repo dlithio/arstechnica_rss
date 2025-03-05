@@ -1,16 +1,65 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// Import the necessary ESLint plugins
+import eslintPluginJestDom from 'eslint-plugin-jest-dom';
+import eslintPluginReactHooks from 'eslint-plugin-react-hooks';
+import eslintPluginSimpleImportSort from 'eslint-plugin-simple-import-sort';
+import eslintPluginTestingLibrary from 'eslint-plugin-testing-library';
+import { FlatCompat } from '@eslint/eslintrc';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript")
+/** @type {import('eslint').Linter.FlatConfig[]} */
+export default [
+  {
+    // Define global configuration
+    ignores: ['node_modules/**', '.next/**', 'out/**'],
+  },
+  
+  // Use Next.js's ESLint configurations
+  ...new FlatCompat({
+    baseDirectory: __dirname,
+    recommendedConfig: {},
+  }).extends('next/core-web-vitals'),
+  
+  // Add custom plugin configurations
+  {
+    plugins: {
+      'simple-import-sort': eslintPluginSimpleImportSort,
+      'react-hooks': eslintPluginReactHooks,
+      'testing-library': eslintPluginTestingLibrary,
+      'jest-dom': eslintPluginJestDom,
+    },
+    rules: {
+      // Import sorting
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+      
+      // React hooks
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      
+      // Testing library
+      'testing-library/await-async-queries': 'error',
+      'testing-library/no-await-sync-queries': 'error',
+      'testing-library/no-container': 'error',
+      'testing-library/no-debugging-utils': 'warn',
+      'testing-library/no-dom-import': 'error',
+      'testing-library/prefer-find-by': 'error',
+      'testing-library/prefer-screen-queries': 'error',
+      
+      // Jest DOM
+      'jest-dom/prefer-checked': 'error',
+      'jest-dom/prefer-enabled-disabled': 'error',
+      'jest-dom/prefer-focus': 'error',
+      'jest-dom/prefer-in-document': 'error',
+      'jest-dom/prefer-required': 'error',
+      'jest-dom/prefer-to-have-attribute': 'error',
+      'jest-dom/prefer-to-have-class': 'error',
+      'jest-dom/prefer-to-have-style': 'error',
+      'jest-dom/prefer-to-have-text-content': 'error',
+      'jest-dom/prefer-to-have-value': 'error'
+    }
+  }
 ];
-
-export default eslintConfig;

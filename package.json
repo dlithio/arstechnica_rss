@@ -13,8 +13,9 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "test": "jest",
     "find-deadcode": "eslint --max-warnings=0 --ext .js,.jsx,.ts,.tsx --rule 'unused-imports/no-unused-imports: error' .",
-    "validate:all": "npm run typecheck && npm run format && npm run test && npm run lint",
-    "check:all": "git add . && npm run typecheck && npm run format && npm run test && npm run lint"
+    "stylelint": "stylelint --fix \"**/*.css\" || true",
+    "validate:all": "npm run typecheck && npm run format && npm run stylelint && npm run test && npm run lint",
+    "check:all": "git add . && npm run typecheck && npm run format && npm run stylelint && npm run test && npm run lint"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -22,7 +23,11 @@
       "prettier --write",
       "tsc-files --noEmit"
     ],
-    "*.{json,md,css}": [
+    "*.css": [
+      "stylelint --fix || true",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
       "prettier --write"
     ],
     "*": [
@@ -51,12 +56,19 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest-dom": "^5.5.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-testing-library": "^7.1.1",
     "eslint-plugin-unused-imports": "^4.1.4",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.4.3",
     "prettier": "^3.5.3",
+    "stylelint": "^16.15.0",
+    "stylelint-config-standard": "^37.0.0",
+    "stylelint-config-tailwindcss": "^1.0.0",
     "tailwindcss": "^4",
     "tsc-files": "^1.1.4",
     "typescript": "^5.8.2"
