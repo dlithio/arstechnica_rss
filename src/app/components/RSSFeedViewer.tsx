@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Feed, FeedItem } from '../../types/feed';
 import { useAuth } from '../contexts/AuthContext';
 import { getLatestBlockedCategories, saveBlockedCategories } from '../services/blockedCategories';
-import { fetchRSSFeed, DEFAULT_FEED_URL } from '../services/feedService';
+import { DEFAULT_FEED_URL, fetchRSSFeed } from '../services/feedService';
 import {
+  getLastVisitFromLocalStorage,
   getLastVisitTime,
   updateLastVisitTime,
-  getLastVisitFromLocalStorage,
 } from '../services/lastVisitService';
-import { Feed, FeedItem } from '../../types/feed';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
-import FeedItemComponent from './FeedItem';
-import ThemeToggle from './ThemeToggle';
-import StagedCategoriesBanner from './StagedCategoriesBanner';
 import BlockedCategoriesManager from './BlockedCategoriesManager';
+import FeedItemComponent from './FeedItem';
+import StagedCategoriesBanner from './StagedCategoriesBanner';
+import ThemeToggle from './ThemeToggle';
 
 // Helper function to format relative time
 const formatRelativeTime = (date: Date): string => {

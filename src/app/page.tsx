@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from './contexts/AuthContext';
+import { useEffect, useState } from 'react';
+
 import AuthForm from './components/AuthForm';
 import UserProfile from './components/UserProfile';
+import { useAuth } from './contexts/AuthContext';
 
 // Import the RSS feed viewer with dynamic import to avoid SSR issues
 const RSSFeedViewer = dynamic(() => import('./components/RSSFeedViewer'), {
