@@ -1,8 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://xuojaasyojcfnzwdvwnv.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../../lib/supabase';
+import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
 
 export type BlockedCategoriesData = {
   id?: string;
@@ -71,7 +68,7 @@ export const saveBlockedCategories = async (
     }
 
     // Also update localStorage for offline access
-    localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(categories));
+    setItem(STORAGE_KEYS.BLOCKED_CATEGORIES, categories);
   } catch (error) {
     console.error('Error saving blocked categories:', error);
     throw error;
@@ -82,13 +79,7 @@ export const saveBlockedCategories = async (
 export const getLatestBlockedCategories = async (userId: string | undefined): Promise<string[]> => {
   if (!userId) {
     // User not logged in, use localStorage only
-    try {
-      const localData = localStorage.getItem('rssViewerBlockedCategories');
-      return localData ? JSON.parse(localData) : [];
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-      return [];
-    }
+    return getItem<string[]>(STORAGE_KEYS.BLOCKED_CATEGORIES, []);
   }
 
   try {
@@ -97,12 +88,11 @@ export const getLatestBlockedCategories = async (userId: string | undefined): Pr
 
     // Regardless of whether we found data or not, update localStorage
     // This handles both existing data and empty arrays
-    localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(dbCategories));
+    setItem(STORAGE_KEYS.BLOCKED_CATEGORIES, dbCategories);
 
     // If no data in DB, check localStorage (only for migration of existing data)
     if (dbCategories.length === 0) {
-      const localData = localStorage.getItem('rssViewerBlockedCategories');
-      const localCategories = localData ? JSON.parse(localData) : [];
+      const localCategories = getItem<string[]>(STORAGE_KEYS.BLOCKED_CATEGORIES, []);
 
       // Only sync to DB if we have local data AND it's not an empty array
       // This prevents creating unnecessary empty rows
@@ -118,12 +108,6 @@ export const getLatestBlockedCategories = async (userId: string | undefined): Pr
     console.error('Error in getLatestBlockedCategories:', error);
 
     // Fallback to localStorage if DB access fails
-    try {
-      const localData = localStorage.getItem('rssViewerBlockedCategories');
-      return localData ? JSON.parse(localData) : [];
-    } catch {
-      // Ignore any parsing errors and return empty array
-      return [];
-    }
+    return getItem<string[]>(STORAGE_KEYS.BLOCKED_CATEGORIES, []);
   }
 };

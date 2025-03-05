@@ -5,7 +5,10 @@ import { SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://xuojaasyojcfnzwdvwnv.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Create a Supabase client for browser usage
+// Create a shared Supabase client instance for reuse
+export const supabase = createSupabaseClient(supabaseUrl, supabaseKey!);
+
+// Create a new Supabase client (for cases where a fresh instance is needed)
 export const createClient = (): SupabaseClient => {
   return createSupabaseClient(supabaseUrl, supabaseKey!);
 };
