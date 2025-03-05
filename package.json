@@ -24,6 +24,9 @@
     ],
     "*.{json,md,css}": [
       "prettier --write"
+    ],
+    "*": [
+      "bash -c '[[ -s \"$1\" && \"$(tail -c1 < \"$1\")\" != \"\\n\" ]] && printf \"\\n\" >> \"$1\" || true' --"
     ]
   },
   "dependencies": {
