@@ -12,11 +12,11 @@ export async function GET(request: Request) {
   try {
     const parser = new Parser();
     const feed = await parser.parseURL(url);
-    
+
     return NextResponse.json({
       title: feed.title,
       description: feed.description,
-      items: feed.items.map(item => ({
+      items: feed.items.map((item) => ({
         title: item.title,
         link: item.link,
         pubDate: item.pubDate,
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         content: item.content,
         contentSnippet: item.contentSnippet,
         categories: item.categories || [],
-      }))
+      })),
     });
   } catch (error) {
     console.error('Error fetching RSS feed:', error);

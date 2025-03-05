@@ -1,9 +1,9 @@
 'use client';
 
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 
 // Import the RSS feed viewer with dynamic import to avoid SSR issues
-const RSSFeedViewer = dynamic(() => import("./components/RSSFeedViewer"), {
+const RSSFeedViewer = dynamic(() => import('./components/RSSFeedViewer'), {
   ssr: false,
 });
 

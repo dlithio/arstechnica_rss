@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Run all checks on all files
+npm run check:all

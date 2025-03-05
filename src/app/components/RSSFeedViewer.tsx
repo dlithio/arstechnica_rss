@@ -20,15 +20,15 @@ type Feed = {
 
 export default function RSSFeedViewer() {
   // Hardcoded Ars Technica feed URL
-  const FEED_URL = "https://feeds.arstechnica.com/arstechnica/index";
-  
+  const FEED_URL = 'https://feeds.arstechnica.com/arstechnica/index';
+
   // Initialize state
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
-  
+
   // Load saved data from localStorage on initial render
   useEffect(() => {
     // Use try-catch to handle potential localStorage errors
@@ -38,7 +38,7 @@ export default function RSSFeedViewer() {
       if (savedBlockedCategories) {
         setBlockedCategories(JSON.parse(savedBlockedCategories));
       }
-      
+
       // Load feed data
       const savedFeed = localStorage.getItem('rssViewerFeedData');
       if (savedFeed) {
@@ -55,17 +55,15 @@ export default function RSSFeedViewer() {
       setFilteredItems([]);
       return;
     }
-    
+
     // Filter out items that have any blocked category
-    const filtered = feed.items.filter(item => {
+    const filtered = feed.items.filter((item) => {
       if (!item.categories || item.categories.length === 0) return true;
-      
+
       // Check if any of the item's categories are in the blocked list
-      return !item.categories.some(category => 
-        blockedCategories.includes(category)
-      );
+      return !item.categories.some((category) => blockedCategories.includes(category));
     });
-    
+
     setFilteredItems(filtered);
   }, [feed, blockedCategories]);
 
@@ -81,12 +79,12 @@ export default function RSSFeedViewer() {
 
   // Remove a category from the block list
   const unblockCategory = (category: string) => {
-    const newBlockedCategories = blockedCategories.filter(c => c !== category);
+    const newBlockedCategories = blockedCategories.filter((c) => c !== category);
     setBlockedCategories(newBlockedCategories);
     // Save to localStorage
     localStorage.setItem('rssViewerBlockedCategories', JSON.stringify(newBlockedCategories));
   };
-  
+
   // Clear all blocked categories
   const clearBlockedCategories = () => {
     setBlockedCategories([]);
@@ -97,19 +95,19 @@ export default function RSSFeedViewer() {
   const fetchFeed = useCallback(async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       // We need to use a server action or API route because RSS-Parser is a Node.js library
       // and can't run directly in the browser due to CORS restrictions
       const response = await fetch(`/api/fetchRSS?url=${encodeURIComponent(FEED_URL)}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch RSS feed');
       }
-      
+
       const data = await response.json();
       setFeed(data);
-      
+
       // Save feed data to localStorage
       localStorage.setItem('rssViewerFeedData', JSON.stringify(data));
     } catch (err) {
@@ -119,7 +117,7 @@ export default function RSSFeedViewer() {
       setLoading(false);
     }
   }, [FEED_URL]);
-  
+
   // Auto-fetch feed on initial load
   useEffect(() => {
     fetchFeed();
@@ -139,14 +137,14 @@ export default function RSSFeedViewer() {
       )}
 
       {feed && (
-        <div>          
+        <div>
           <div className="divide-y">
             {filteredItems.map((item, index) => (
               <article key={index} className="py-4">
                 <h3 className="text-xl font-semibold mb-2">
-                  <a 
-                    href={item.link} 
-                    target="_blank" 
+                  <a
+                    href={item.link}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
                   >
@@ -156,18 +154,18 @@ export default function RSSFeedViewer() {
                 {item.pubDate && (
                   <div className="mb-2">
                     <p className="text-sm text-gray-500">
-                      {new Date(item.pubDate).toLocaleDateString()} 
+                      {new Date(item.pubDate).toLocaleDateString()}
                       {item.creator && ` • ${item.creator}`}
                     </p>
-                    
+
                     {item.categories && item.categories.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.categories.map((category, i) => (
-                          <span 
-                            key={i} 
+                          <span
+                            key={i}
                             className={`inline-block text-xs px-2 py-0.5 rounded-full cursor-pointer ${
-                              blockedCategories.includes(category) 
-                                ? 'bg-red-100 text-red-700' 
+                              blockedCategories.includes(category)
+                                ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                             onClick={() => blockCategory(category)}
@@ -180,17 +178,15 @@ export default function RSSFeedViewer() {
                     )}
                   </div>
                 )}
-                {item.contentSnippet && (
-                  <p className="text-gray-700">{item.contentSnippet}</p>
-                )}
+                {item.contentSnippet && <p className="text-gray-700">{item.contentSnippet}</p>}
               </article>
             ))}
           </div>
-          
+
           {feed.items.length > 0 && filteredItems.length === 0 && (
             <div className="text-center p-8 bg-gray-50 rounded-lg">
               <p className="text-gray-600">All items are filtered due to blocked categories.</p>
-              <button 
+              <button
                 onClick={clearBlockedCategories}
                 className="mt-2 text-blue-600 hover:underline text-sm"
               >
@@ -198,13 +194,13 @@ export default function RSSFeedViewer() {
               </button>
             </div>
           )}
-          
+
           {/* Blocked Categories section moved to bottom */}
           {blockedCategories.length > 0 && (
             <div className="mt-10 p-4 bg-red-50 rounded-lg border border-red-100">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-red-800">Blocked Categories</h3>
-                <button 
+                <button
                   className="text-xs text-red-600 hover:text-red-800"
                   onClick={clearBlockedCategories}
                 >
@@ -220,16 +216,25 @@ export default function RSSFeedViewer() {
                     title="Click to unblock"
                   >
                     {category}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3 w-3 ml-1"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </span>
                 ))}
               </div>
               <p className="text-xs text-red-600 mt-2">
-                {feed && filteredItems.length < feed.items.length && 
-                  `${feed.items.length - filteredItems.length} items hidden due to blocked categories.`
-                }
+                {feed &&
+                  filteredItems.length < feed.items.length &&
+                  `${feed.items.length - filteredItems.length} items hidden due to blocked categories.`}
               </p>
             </div>
           )}
