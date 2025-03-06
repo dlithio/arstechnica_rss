@@ -27,6 +27,33 @@ Most of your development work will happen here:
 
 Next.js 15 uses the "App Router" pattern, which is folder-based routing. Each folder under `/app` becomes a URL route:
 
+- In Python web frameworks like Flask or Django, you define routes using decorators or URL patterns:
+
+  ```python
+  # Flask example
+  @app.route('/about')
+  def about():
+      return render_template('about.html')
+
+  # Django example
+  urlpatterns = [
+      path('about/', views.about_view, name='about'),
+  ]
+  ```
+
+- In Next.js, you simply create folders and files in a specific structure:
+  - If you create a folder `/src/app/about`, it automatically creates a URL route at `yourdomain.com/about`
+  - The `page.tsx` file inside that folder determines what content appears at that URL
+  - No route registration code needed - the file structure itself defines the routes
+
+For example:
+
+- `/src/app/page.tsx` → `yourdomain.com/` (homepage)
+- `/src/app/about/page.tsx` → `yourdomain.com/about`
+- `/src/app/products/[id]/page.tsx` → `yourdomain.com/products/1`, `yourdomain.com/products/2`, etc.
+
+Main files in the app directory:
+
 - `page.tsx`: The main component rendered at the route (similar to a Python Flask/Django view).
 - `layout.tsx`: Defines the layout that wraps around the page.
 - `globals.css`: Contains global CSS styles.
