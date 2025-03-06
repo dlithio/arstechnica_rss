@@ -3,7 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 // Supabase client URLs
 const supabaseUrl = 'https://xuojaasyojcfnzwdvwnv.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
 // Create a shared Supabase client instance for reuse
 export const supabase = createSupabaseClient(supabaseUrl, supabaseKey!);

@@ -12,7 +12,7 @@ export default function HelpText() {
     >
       <p>
         <strong>Tip:</strong> Click on article category bubbles to block unwanted topics. Sign in to
-        sync your blocked categories and article history across devices.
+        sync your blocked categories and article seen status across devices.
       </p>
     </div>
   );

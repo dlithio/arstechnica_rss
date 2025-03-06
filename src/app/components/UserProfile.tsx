@@ -40,7 +40,7 @@ export default function UserProfile({ user, onSignOut }: UserProfileProps) {
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
       >
         <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-          {user.email?.[0].toUpperCase() || 'U'}
+          {user.email?.[0]?.toUpperCase() || 'U'}
         </div>
       </button>
 
