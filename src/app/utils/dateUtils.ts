@@ -11,7 +11,7 @@ export const formatRelativeTime = (date: Date): string => {
 
   if (hours === 0) {
     return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-  } else if (minutes === 0) {
+  } else if (hours > 0 && minutes === 0) {
     return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
   } else {
     return `${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;

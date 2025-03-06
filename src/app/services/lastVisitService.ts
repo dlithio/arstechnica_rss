@@ -101,11 +101,8 @@ export const updateLastVisitTime = async (): Promise<void> => {
     return;
   }
 
-  // Use the helper function with the current date
+  // Use the helper function with the current date - this already updates localStorage
   await updateLastVisitTimeToSpecificDate(now, user.id);
-
-  // Always update localStorage as well
-  setLastVisitLocalStorage(now);
 };
 
 // Helper functions for localStorage fallback
