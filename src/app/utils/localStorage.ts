@@ -53,7 +53,6 @@ export function removeItem(key: string): void {
   }
 
   try {
-    localStorage.setItem(key, '');
     localStorage.removeItem(key);
   } catch (err) {
     console.error(`Error removing ${key} from localStorage:`, err);
