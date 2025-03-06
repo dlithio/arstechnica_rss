@@ -1,18 +1,11 @@
 'use client';
 
-type StagedCategoriesBannerProps = {
-  stagedCategories: string[];
-  unstageCategoryToggle: (category: string) => void;
-  setStagedCategories: (categories: string[]) => void;
-  applyBlockedCategories: () => Promise<void>;
-};
+import { useFeed } from '../contexts/FeedContext';
 
-export default function StagedCategoriesBanner({
-  stagedCategories,
-  unstageCategoryToggle,
-  setStagedCategories,
-  applyBlockedCategories,
-}: StagedCategoriesBannerProps) {
+export default function StagedCategoriesBanner() {
+  const { stagedCategories, unstageCategoryToggle, setStagedCategories, applyBlockedCategories } =
+    useFeed();
+
   if (stagedCategories.length === 0) {
     return null;
   }

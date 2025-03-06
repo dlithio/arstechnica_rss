@@ -2,21 +2,12 @@
 
 import { useState } from 'react';
 
-type BlockedCategoriesManagerProps = {
-  blockedCategories: string[];
-  unblockCategory: (category: string) => Promise<void>;
-  clearBlockedCategories: (e?: React.MouseEvent) => Promise<void>;
-  totalItems: number;
-  filteredItemsCount: number;
-};
+import { useFeed } from '../contexts/FeedContext';
 
-export default function BlockedCategoriesManager({
-  blockedCategories,
-  unblockCategory,
-  clearBlockedCategories,
-  totalItems,
-  filteredItemsCount,
-}: BlockedCategoriesManagerProps) {
+export default function BlockedCategoriesManager() {
+  const { blockedCategories, unblockCategory, clearBlockedCategories, feed, filteredItems } =
+    useFeed();
+
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -40,6 +31,9 @@ export default function BlockedCategoriesManager({
   if (blockedCategories.length === 0) {
     return null;
   }
+
+  const totalItems = feed?.items?.length || 0;
+  const filteredItemsCount = filteredItems.length;
 
   return (
     <div className="mt-10 rounded-lg border border-[var(--blocked-border)] bg-[var(--blocked-bg)] shadow-sm">
