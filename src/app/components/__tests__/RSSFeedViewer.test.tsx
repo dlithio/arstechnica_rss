@@ -3,17 +3,21 @@ import React from 'react';
 
 import RSSFeedViewer from '../RSSFeedViewer';
 
-// Mock next/themes
+/**
+ * Mocks for RSSFeedViewer tests
+ */
+
+// Theme provider mock
 jest.mock('next-themes', () => ({
   useTheme: () => ({ theme: 'light', setTheme: jest.fn() }),
 }));
 
-// Mock context
+// Auth context mock
 jest.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: null }),
 }));
 
-// Mock our localStorage utility
+// localStorage utilities mock
 jest.mock('../../utils/localStorage', () => ({
   getItem: jest.fn().mockImplementation(() => null),
   setItem: jest.fn(),
@@ -24,13 +28,13 @@ jest.mock('../../utils/localStorage', () => ({
   },
 }));
 
-// Mock blockedCategories service
+// blockedCategories service mock
 jest.mock('../../services/blockedCategories', () => ({
   getLatestBlockedCategories: jest.fn().mockResolvedValue([]),
   saveBlockedCategories: jest.fn().mockResolvedValue(undefined),
 }));
 
-// Mock fetch
+// Mock fetch API
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
@@ -38,7 +42,7 @@ global.fetch = jest.fn(() =>
   })
 ) as jest.Mock;
 
-// Mock child components
+// Child component mocks
 jest.mock('../FeedItem', () => ({
   __esModule: true,
   default: jest.fn(() => <div data-testid="feed-item" />),

@@ -1,6 +1,9 @@
 import { supabase } from '../../lib/supabase';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
 
+/**
+ * Type for the blocked_categories table in the database
+ */
 export type BlockedCategoriesData = {
   id?: string;
   user_id: string;
@@ -8,7 +11,12 @@ export type BlockedCategoriesData = {
   updated_at?: string;
 };
 
-// Fetch blocked categories for a user
+/**
+ * Fetches blocked categories for a specific user from the database
+ *
+ * @param userId The user's unique identifier
+ * @returns Array of blocked category strings or empty array if none found
+ */
 export const fetchBlockedCategories = async (userId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
@@ -33,7 +41,12 @@ export const fetchBlockedCategories = async (userId: string): Promise<string[]> 
   }
 };
 
-// Save blocked categories for a user
+/**
+ * Saves blocked categories for a user to the database and localStorage
+ *
+ * @param userId The user's unique identifier
+ * @param categories Array of category strings to block
+ */
 export const saveBlockedCategories = async (
   userId: string,
   categories: string[]
@@ -75,7 +88,13 @@ export const saveBlockedCategories = async (
   }
 };
 
-// Get the latest blocked categories, prioritizing DB over localStorage
+/**
+ * Gets the latest blocked categories, prioritizing database over localStorage
+ * Handles syncing between database and localStorage for offline support
+ *
+ * @param userId The user's unique identifier, or undefined if user is not logged in
+ * @returns Array of blocked category strings
+ */
 export const getLatestBlockedCategories = async (userId: string | undefined): Promise<string[]> => {
   if (!userId) {
     // User not logged in, use localStorage only

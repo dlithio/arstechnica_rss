@@ -1,14 +1,19 @@
 import { Feed } from '../../types/feed';
 import { setItem, STORAGE_KEYS } from '../utils/localStorage';
 
-// Default feed URL for Ars Technica
+/** Default feed URL for Ars Technica */
 export const DEFAULT_FEED_URL = 'https://feeds.arstechnica.com/arstechnica/index';
 
-// Fetch RSS feed from API
+/**
+ * Fetches an RSS feed from the API and saves it to localStorage
+ *
+ * Uses a server-side API route to avoid CORS issues when fetching RSS feeds
+ *
+ * @param url The RSS feed URL to fetch (defaults to Ars Technica)
+ * @returns Parsed Feed object with title, description, and items
+ */
 export const fetchRSSFeed = async (url: string = DEFAULT_FEED_URL): Promise<Feed> => {
   try {
-    // We need to use a server action or API route because RSS-Parser is a Node.js library
-    // and can't run directly in the browser due to CORS restrictions
     const response = await fetch(`/api/fetchRSS?url=${encodeURIComponent(url)}`);
 
     if (!response.ok) {

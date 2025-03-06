@@ -1,8 +1,14 @@
 /**
- * Type-safe localStorage utility functions
+ * Type-safe localStorage utility functions for managing client-side data
  */
 
-// Get item from localStorage with type safety
+/**
+ * Gets an item from localStorage with type safety
+ *
+ * @param key The localStorage key to retrieve
+ * @param defaultValue Default value to return if item doesn't exist
+ * @returns The parsed value from localStorage or the default value
+ */
 export function getItem<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') {
     return defaultValue;
@@ -18,7 +24,12 @@ export function getItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-// Set item in localStorage with type safety
+/**
+ * Sets an item in localStorage with type safety
+ *
+ * @param key The localStorage key to set
+ * @param value The value to store (will be JSON stringified)
+ */
 export function setItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') {
     return;
@@ -31,7 +42,11 @@ export function setItem<T>(key: string, value: T): void {
   }
 }
 
-// Remove item from localStorage
+/**
+ * Removes an item from localStorage
+ *
+ * @param key The localStorage key to remove
+ */
 export function removeItem(key: string): void {
   if (typeof window === 'undefined') {
     return;
@@ -45,7 +60,9 @@ export function removeItem(key: string): void {
   }
 }
 
-// Constants for localStorage keys to avoid typos
+/**
+ * Constants for localStorage keys to avoid typos and ensure consistency
+ */
 export const STORAGE_KEYS = {
   FEED_DATA: 'rssViewerFeedData',
   BLOCKED_CATEGORIES: 'rssViewerBlockedCategories',

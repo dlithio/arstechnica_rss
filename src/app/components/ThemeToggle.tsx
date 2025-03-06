@@ -3,6 +3,10 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
+/**
+ * ThemeToggle component that allows switching between light and dark modes
+ * Uses next-themes for theme management and prevents hydration mismatch with mounted state
+ */
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);

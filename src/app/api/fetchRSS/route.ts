@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import Parser from 'rss-parser';
 
+/**
+ * API route to fetch and parse an RSS feed from a given URL
+ * Used to avoid CORS issues when fetching RSS feeds from the client
+ */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');

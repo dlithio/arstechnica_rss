@@ -10,6 +10,10 @@ import HelpText from './HelpText';
 import StagedCategoriesBanner from './StagedCategoriesBanner';
 import ThemeToggle from './ThemeToggle';
 
+/**
+ * Internal component that handles the actual rendering of the RSS feed viewer
+ * Uses a mounted state to prevent hydration mismatch issues with theme/localStorage
+ */
 function RSSFeedViewerContent() {
   const [mounted, setMounted] = useState(false);
 
@@ -35,6 +39,9 @@ function RSSFeedViewerContent() {
   );
 }
 
+/**
+ * Main RSS feed viewer component that wraps content with FeedProvider
+ */
 export default function RSSFeedViewer() {
   return (
     <FeedProvider>
