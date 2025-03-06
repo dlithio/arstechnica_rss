@@ -2,6 +2,8 @@
 
 A Next.js application that displays and filters RSS feed content from Ars Technica with user authentication and preference syncing using Supabase.
 
+> **Disclaimer:** This project was generated entirely with [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) by someone with no web development experience.
+
 ## Features
 
 - Displays articles from the Ars Technica RSS feed
