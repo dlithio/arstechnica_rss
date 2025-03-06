@@ -254,7 +254,7 @@ export default function RSSFeedViewer() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto relative pb-16">
+    <div className="w-full max-w-3xl mx-auto relative pb-4">
       {(loading || syncingPreferences) && <p className="text-secondary">Loading...</p>}
       {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
       {!loading && !error && !feed && (
@@ -321,6 +321,21 @@ export default function RSSFeedViewer() {
       )}
 
       <ThemeToggle />
+
+      {/* Help text at the bottom of the page (only visible after scrolling) */}
+      <div
+        className="mt-12 mb-4 p-4 rounded-lg text-center text-sm border transition-colors"
+        style={{
+          backgroundColor: 'var(--blocked-bg)',
+          color: 'var(--blocked-text)',
+          borderColor: 'var(--blocked-border)',
+        }}
+      >
+        <p>
+          <strong>Tip:</strong> Click on article category bubbles to block unwanted topics. Sign in
+          to sync your blocked categories and article history across devices.
+        </p>
+      </div>
     </div>
   );
 }
