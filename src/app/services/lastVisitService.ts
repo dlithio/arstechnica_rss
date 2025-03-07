@@ -15,12 +15,19 @@ export const clearDebugLogs = () => {
 
 const addDebugLog = (message: string) => {
   const timestamp = new Date().toISOString();
-  debugLogs.unshift(`${timestamp}: ${message}`);
+
+  // Get caller information
+  const stackTrace = new Error().stack;
+  const callerInfo = stackTrace
+    ? stackTrace.split('\n')[2]?.trim().replace(/^at /, '') || 'unknown location'
+    : 'unknown location';
+
+  debugLogs.unshift(`${timestamp}: [${callerInfo}] ${message}`);
   // Keep only the latest 20 logs
   if (debugLogs.length > 20) {
     debugLogs.pop();
   }
-  console.log(`LASTVISIT DEBUG: ${message}`);
+  console.log(`LASTVISIT DEBUG: [${callerInfo}] ${message}`);
 };
 
 /**
