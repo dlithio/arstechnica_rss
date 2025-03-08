@@ -7,7 +7,6 @@ import BlockedCategoriesManager from './BlockedCategoriesManager';
 import FeedControls from './FeedControls';
 import FeedList from './FeedList';
 import HelpText from './HelpText';
-import LastVisitDebug from './LastVisitDebug';
 import StagedCategoriesBanner from './StagedCategoriesBanner';
 import ThemeToggle from './ThemeToggle';
 
@@ -30,7 +29,6 @@ function RSSFeedViewerContent() {
 
   return (
     <div className="w-full max-w-3xl mx-auto relative pb-4">
-      <LastVisitDebug />
       <FeedControls />
       <StagedCategoriesBanner />
       <FeedList />
