@@ -6,9 +6,9 @@ import { Feed, FeedItem } from '../../types/feed';
 import { getLatestBlockedCategories, saveBlockedCategories } from '../services/blockedCategories';
 import { DEFAULT_FEED_URL, fetchRSSFeed } from '../services/feedService';
 import {
-  getLastVisitFromLocalStorage,
-  getLastVisitTime,
-  updateLastVisitTime,
+  getPreviousRssLoad,
+  getPreviousRssLoadFromLocalStorage,
+  updateCurrentRssLoadTime,
 } from '../services/lastVisitService';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
 import { useAuth } from './AuthContext';
@@ -48,10 +48,10 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const [stagedCategories, setStagedCategories] = useState<string[]>([]); // Categories staged for blocking
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [syncingPreferences, setSyncingPreferences] = useState(false);
-  // Initialize lastVisit with localStorage data immediately
-  const [lastVisit, setLastVisit] = useState<Date | null>(() => {
+  // Initialize previousRssLoad with localStorage data immediately
+  const [previousRssLoad, setPreviousRssLoad] = useState<Date | null>(() => {
     if (typeof window !== 'undefined') {
-      return getLastVisitFromLocalStorage();
+      return getPreviousRssLoadFromLocalStorage();
     }
     return null;
   });
@@ -103,9 +103,9 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       const dateA = new Date(a.pubDate);
       const dateB = new Date(b.pubDate);
 
-      // Check if items are seen or not
-      const aIsSeen = lastVisit ? dateA < lastVisit : false;
-      const bIsSeen = lastVisit ? dateB < lastVisit : false;
+      // Check if items are seen or not using previousRssLoad
+      const aIsSeen = previousRssLoad ? dateA < previousRssLoad : false;
+      const bIsSeen = previousRssLoad ? dateB < previousRssLoad : false;
 
       // New items first, then by date (newest to oldest)
       if (aIsSeen !== bIsSeen) {
@@ -115,7 +115,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     });
 
     setFilteredItems(sorted);
-  }, [feed, blockedCategories, lastVisit]);
+  }, [feed, blockedCategories, previousRssLoad]);
 
   // Stage a category for blocking (doesn't apply immediately)
   const stageCategory = (category: string) => {
@@ -197,14 +197,23 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     setError('');
 
     try {
+      // Step 1: Calculate previous_rss_load before loading feed
+      if (resetVisitTime) {
+        const calculatedPreviousLoad = await getPreviousRssLoad();
+        setPreviousRssLoad(calculatedPreviousLoad);
+      }
+
+      // Step 2: Load the RSS feed
       const data = await fetchRSSFeed(DEFAULT_FEED_URL);
       setFeed(data);
 
-      // If resetVisitTime is true, update the last visit time
+      // Save feed data to localStorage
+      setItem(STORAGE_KEYS.FEED_DATA, data);
+
+      // Step 3: After feed is loaded successfully and previous_rss_load is set,
+      // update this_rss_load and last_visited_at
       if (resetVisitTime) {
-        await updateLastVisitTime();
-        const updatedTime = await getLastVisitTime();
-        setLastVisit(updatedTime);
+        await updateCurrentRssLoadTime();
       }
     } catch (err) {
       setError('Error fetching RSS feed. Please try again later.');
@@ -214,34 +223,30 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Load last visit time only on initial component mount, not on tab switch
+  // Load previous_rss_load only on initial component mount
   useEffect(() => {
-    // Only fetch last visit time if we haven't loaded it yet
-    if (!lastVisit) {
-      async function loadLastVisitTime() {
+    // Only fetch previous_rss_load if we haven't loaded it yet
+    if (!previousRssLoad) {
+      async function loadPreviousRssLoad() {
         try {
-          const lastVisitTime = await getLastVisitTime();
-          setLastVisit(lastVisitTime);
+          const calculatedPreviousLoad = await getPreviousRssLoad();
+          setPreviousRssLoad(calculatedPreviousLoad);
         } catch (err) {
-          console.error('Error loading last visit time:', err);
+          console.error('Error loading previous RSS load time:', err);
         }
       }
 
-      loadLastVisitTime();
+      loadPreviousRssLoad();
     }
-  }, [user, lastVisit]);
+  }, [user, previousRssLoad]);
 
   // Auto-fetch feed on initial load
   useEffect(() => {
-    fetchFeed();
+    fetchFeed(true); // Set resetVisitTime to true to properly initialize both timestamps
   }, [fetchFeed]);
 
-  // Update last visit time when component mounts
-  useEffect(() => {
-    if (mounted) {
-      updateLastVisitTime().catch((err) => console.error('Error updating last visit time:', err));
-    }
-  }, [mounted]);
+  // We no longer automatically update on component mount
+  // Instead, we only update after feed is loaded and previous_rss_load is calculated
 
   // After mounting, render is safe
   useEffect(() => {
@@ -261,7 +266,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         error,
         fetchFeed,
         filteredItems,
-        lastVisit,
+        lastVisit: previousRssLoad, // Use previousRssLoad but keep the same prop name for compatibility
         blockedCategories,
         stagedCategories,
         syncingPreferences,
