@@ -203,11 +203,9 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       // If resetVisitTime is true, update the last visit time
       if (resetVisitTime) {
         await updateLastVisitTime();
+        const updatedTime = await getLastVisitTime();
+        setLastVisit(updatedTime);
       }
-
-      // Always refresh the last visit time from sources
-      const updatedTime = await getLastVisitTime();
-      setLastVisit(updatedTime);
     } catch (err) {
       setError('Error fetching RSS feed. Please try again later.');
       console.error(err);
@@ -216,19 +214,22 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Load last visit time on initial component mount and when user changes
+  // Load last visit time only on initial component mount, not on tab switch
   useEffect(() => {
-    async function loadLastVisitTime() {
-      try {
-        const lastVisitTime = await getLastVisitTime();
-        setLastVisit(lastVisitTime);
-      } catch (err) {
-        console.error('Error loading last visit time:', err);
+    // Only fetch last visit time if we haven't loaded it yet
+    if (!lastVisit) {
+      async function loadLastVisitTime() {
+        try {
+          const lastVisitTime = await getLastVisitTime();
+          setLastVisit(lastVisitTime);
+        } catch (err) {
+          console.error('Error loading last visit time:', err);
+        }
       }
-    }
 
-    loadLastVisitTime();
-  }, [user]);
+      loadLastVisitTime();
+    }
+  }, [user, lastVisit]);
 
   // Auto-fetch feed on initial load
   useEffect(() => {

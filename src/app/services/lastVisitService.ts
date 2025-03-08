@@ -39,19 +39,16 @@ export const getLastVisitTime = async (): Promise<Date | null> => {
   // Compare with localStorage to use the most recent date
   const localLastVisit = getLastVisitFromLocalStorage();
 
-  // Always use the most recent timestamp (either from Supabase or localStorage)
+  // Use the most recent timestamp (either from Supabase or localStorage)
   if (localLastVisit && localLastVisit > lastVisitTime) {
     // If localStorage has more recent data, update Supabase to match
     await updateLastVisitTimeToSpecificDate(localLastVisit, user.id);
     return localLastVisit;
-  } else if (lastVisitTime) {
-    // If Supabase has more recent data or no localStorage, use Supabase data and update localStorage
-    setLastVisitLocalStorage(lastVisitTime);
-    return lastVisitTime;
   }
 
-  // If neither source has data, return null
-  return null;
+  // Otherwise use Supabase data and update localStorage
+  setLastVisitLocalStorage(lastVisitTime);
+  return lastVisitTime;
 };
 
 /**
