@@ -197,24 +197,17 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     setError('');
 
     try {
-      // Get the last visit time BEFORE fetching
-      // Only if we're not going to reset it
-      if (!resetVisitTime) {
-        const lastVisitTime = await getLastVisitTime();
-        setLastVisit(lastVisitTime);
-      }
-
       const data = await fetchRSSFeed(DEFAULT_FEED_URL);
       setFeed(data);
 
-      // If resetVisitTime is true, update the last visit time AFTER successful fetch
-      // We only want to update lastVisit AFTER a successful fetch, not before
+      // If resetVisitTime is true, update the last visit time
       if (resetVisitTime) {
         await updateLastVisitTime();
-        // Get updated time after saving
-        const updatedTime = await getLastVisitTime();
-        setLastVisit(updatedTime);
       }
+
+      // Always refresh the last visit time from sources
+      const updatedTime = await getLastVisitTime();
+      setLastVisit(updatedTime);
     } catch (err) {
       setError('Error fetching RSS feed. Please try again later.');
       console.error(err);
@@ -242,10 +235,12 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     fetchFeed();
   }, [fetchFeed]);
 
-  // We no longer update lastVisit time on component mount
-  // This was causing items to be marked as seen immediately on site visit
-  // Instead, we only update the lastVisit time explicitly when the user manually refreshes
-  // or when resetVisitTime is true in fetchFeed
+  // Update last visit time when component mounts
+  useEffect(() => {
+    if (mounted) {
+      updateLastVisitTime().catch((err) => console.error('Error updating last visit time:', err));
+    }
+  }, [mounted]);
 
   // After mounting, render is safe
   useEffect(() => {
