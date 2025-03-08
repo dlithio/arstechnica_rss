@@ -51,7 +51,14 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   // Initialize lastVisit with localStorage data immediately
   const [lastVisit, setLastVisit] = useState<Date | null>(() => {
     if (typeof window !== 'undefined') {
-      return getLastVisitFromLocalStorage();
+      const initialValue = getLastVisitFromLocalStorage();
+      if (window.emitDebugLog) {
+        window.emitDebugLog(
+          `FeedContext initializing lastVisit state from localStorage: ${initialValue?.toISOString() || 'null'}`,
+          'lastVisit'
+        );
+      }
+      return initialValue;
     }
     return null;
   });
@@ -192,37 +199,95 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchFeed = useCallback(async (resetVisitTime = false) => {
-    setLoading(true);
-    setError('');
+  const fetchFeed = useCallback(
+    async (resetVisitTime = false) => {
+      setLoading(true);
+      setError('');
 
-    try {
-      const data = await fetchRSSFeed(DEFAULT_FEED_URL);
-      setFeed(data);
+      try {
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext.fetchFeed() called with resetVisitTime=${resetVisitTime}`,
+            'feed'
+          );
+        }
 
-      // If resetVisitTime is true, update the last visit time
-      if (resetVisitTime) {
-        await updateLastVisitTime();
+        const data = await fetchRSSFeed(DEFAULT_FEED_URL);
+        setFeed(data);
+
+        // If resetVisitTime is true, update the last visit time
+        if (resetVisitTime) {
+          if (typeof window !== 'undefined' && window.emitDebugLog) {
+            window.emitDebugLog(
+              `FeedContext.fetchFeed calling updateLastVisitTime() (resetVisitTime was true)`,
+              'lastVisit'
+            );
+          }
+          await updateLastVisitTime();
+        }
+
+        // Always refresh the last visit time from sources
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext.fetchFeed fetching updated lastVisit time, current value: ${lastVisit?.toISOString() || 'null'}`,
+            'lastVisit'
+          );
+        }
+
+        const updatedTime = await getLastVisitTime();
+
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext.fetchFeed setting lastVisit to: ${updatedTime?.toISOString() || 'null'}`,
+            'lastVisit'
+          );
+        }
+
+        setLastVisit(updatedTime);
+      } catch (err) {
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext.fetchFeed error: ${err instanceof Error ? err.message : String(err)}`,
+            'feed'
+          );
+        }
+        setError('Error fetching RSS feed. Please try again later.');
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-
-      // Always refresh the last visit time from sources
-      const updatedTime = await getLastVisitTime();
-      setLastVisit(updatedTime);
-    } catch (err) {
-      setError('Error fetching RSS feed. Please try again later.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [lastVisit]
+  );
 
   // Load last visit time on initial component mount and when user changes
   useEffect(() => {
     async function loadLastVisitTime() {
       try {
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext starting to load lastVisit time from services, current value: ${lastVisit?.toISOString() || 'null'}`,
+            'lastVisit'
+          );
+        }
+
         const lastVisitTime = await getLastVisitTime();
+
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext setting lastVisit state after getLastVisitTime(): ${lastVisitTime?.toISOString() || 'null'}`,
+            'lastVisit'
+          );
+        }
+
         setLastVisit(lastVisitTime);
       } catch (err) {
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext error loading lastVisit time: ${err instanceof Error ? err.message : String(err)}`,
+            'lastVisit'
+          );
+        }
         console.error('Error loading last visit time:', err);
       }
     }
@@ -238,7 +303,22 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   // Update last visit time when component mounts
   useEffect(() => {
     if (mounted) {
-      updateLastVisitTime().catch((err) => console.error('Error updating last visit time:', err));
+      if (typeof window !== 'undefined' && window.emitDebugLog) {
+        window.emitDebugLog(
+          `FeedContext calling updateLastVisitTime() on component mount`,
+          'lastVisit'
+        );
+      }
+
+      updateLastVisitTime().catch((err) => {
+        if (typeof window !== 'undefined' && window.emitDebugLog) {
+          window.emitDebugLog(
+            `FeedContext error updating lastVisit time on mount: ${err instanceof Error ? err.message : String(err)}`,
+            'lastVisit'
+          );
+        }
+        console.error('Error updating last visit time:', err);
+      });
     }
   }, [mounted]);
 
