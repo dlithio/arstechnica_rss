@@ -37,14 +37,11 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4">
       {/* Debug Log */}
-      {mounted && (
-        <dynamic.default>
-          {() => {
-            const DebugLog = dynamic(() => import('./components/DebugLog'), { ssr: false });
-            return <DebugLog />;
-          }}
-        </dynamic.default>
-      )}
+      {mounted &&
+        (() => {
+          const DebugLog = dynamic(() => import('./components/DebugLog'), { ssr: false });
+          return <DebugLog />;
+        })()}
 
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Ars Technica Feed</h1>

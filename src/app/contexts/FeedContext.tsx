@@ -293,7 +293,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
 
     loadLastVisitTime();
-  }, [user]);
+  }, [user, lastVisit]);
 
   // Auto-fetch feed on initial load
   useEffect(() => {
