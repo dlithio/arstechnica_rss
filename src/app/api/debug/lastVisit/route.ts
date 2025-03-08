@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 /**
  * Debug API endpoint for retrieving lastVisit data from Supabase
  */
-export async function GET(_request: Request) {
+export async function GET(request: Request) {
   try {
     // Get current user
     const {

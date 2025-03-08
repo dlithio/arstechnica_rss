@@ -40,7 +40,7 @@ export default function DebugLog() {
         const response = await fetch('/api/debug/lastVisit', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-        }).catch((_err) => {
+        }).catch((err) => {
           // API doesn't exist yet, just log it
           window.emitDebugLog(`INIT STATUS - No debug API endpoint for Supabase data`, 'lastVisit');
           return null;
@@ -114,7 +114,7 @@ export default function DebugLog() {
                   : 'text-gray-300'
             }`}
           >
-            [{entry.timestamp.split('T')?.[1]?.split('.')?.[0] || ''}] {entry.message}
+            [{entry.timestamp.split('T')[1].split('.')[0]}] {entry.message}
           </div>
         ))}
       </div>

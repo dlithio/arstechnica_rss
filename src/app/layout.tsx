@@ -1,6 +1,6 @@
 import './globals.css';
 
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 
@@ -16,13 +16,6 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
-
 export const metadata: Metadata = {
   title: 'Ars Technica Feed',
   description: 'Ars Technica RSS Feed Reader',
@@ -33,6 +26,12 @@ export const metadata: Metadata = {
     title: 'Ars Feed',
   },
   applicationName: 'Ars Feed',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
