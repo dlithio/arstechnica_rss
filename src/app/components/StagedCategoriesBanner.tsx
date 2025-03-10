@@ -11,7 +11,7 @@ export default function StagedCategoriesBanner() {
   }
 
   return (
-    <div className="sticky top-0 z-10 mb-4 p-3 bg-amber-100 dark:bg-amber-900/40 rounded-md shadow-md">
+    <div className="sticky top-0 z-10 mb-4 p-3 bg-amber-100 dark:bg-amber-900 rounded-md shadow-md">
       <div className="flex flex-wrap gap-1 mb-2">
         <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
           Categories staged for blocking:
