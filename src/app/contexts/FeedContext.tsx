@@ -15,7 +15,8 @@ import { useAuth } from './AuthContext';
 
 interface FeedContextType {
   // Feed data
-  feed: Feed | null;
+  feed: Feed | null; // This will now be the filtered feed
+  feedOriginal: Feed | null; // Original unfiltered feed data (not for UI display)
   loading: boolean;
   error: string;
   fetchFeed: (resetVisitTime?: boolean) => Promise<void>;
@@ -41,7 +42,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   // Initialize state
-  const [feed, setFeed] = useState<Feed | null>(null);
+  const [feedOriginal, setFeedOriginal] = useState<Feed | null>(null); // Original unfiltered feed
+  const [feed, setFeed] = useState<Feed | null>(null); // Filtered feed for UI display
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
@@ -75,21 +77,28 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
   // Load feed data from localStorage on initial render
   useEffect(() => {
-    const savedFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA, null);
-    if (savedFeed) {
-      setFeed(savedFeed);
+    const savedOriginalFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA_ORIGINAL, null);
+    const savedFilteredFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA_FILTERED, null);
+
+    if (savedOriginalFeed) {
+      setFeedOriginal(savedOriginalFeed);
+    }
+
+    if (savedFilteredFeed) {
+      setFeed(savedFilteredFeed);
     }
   }, []);
 
-  // Filter items whenever feed or blocked categories change
+  // Create filtered feed whenever original feed or blocked categories change
   useEffect(() => {
-    if (!feed) {
+    if (!feedOriginal) {
       setFilteredItems([]);
+      setFeed(null);
       return;
     }
 
     // Filter out items that have any blocked category
-    const filtered = feed.items.filter((item) => {
+    const filtered = feedOriginal.items.filter((item) => {
       if (!item.categories || item.categories.length === 0) return true;
 
       // Check if any of the item's categories are in the blocked list
@@ -114,8 +123,18 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       return dateB.getTime() - dateA.getTime(); // Newest first
     });
 
+    // Create and save the filtered feed
+    const filteredFeed: Feed = {
+      ...feedOriginal, // Copy title and description
+      items: sorted, // Replace with filtered items
+    };
+
+    setFeed(filteredFeed);
     setFilteredItems(sorted);
-  }, [feed, blockedCategories, previousRssLoad]);
+
+    // Save filtered feed to localStorage
+    setItem(STORAGE_KEYS.FEED_DATA_FILTERED, filteredFeed);
+  }, [feedOriginal, blockedCategories, previousRssLoad]);
 
   // Stage a category for blocking (doesn't apply immediately)
   const stageCategory = (category: string) => {
@@ -205,10 +224,12 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
       // Step 2: Load the RSS feed
       const data = await fetchRSSFeed(DEFAULT_FEED_URL);
-      setFeed(data);
+      setFeedOriginal(data);
 
-      // Save feed data to localStorage
-      setItem(STORAGE_KEYS.FEED_DATA, data);
+      // Save original feed data to localStorage
+      setItem(STORAGE_KEYS.FEED_DATA_ORIGINAL, data);
+
+      // The filtered feed will be created by the useEffect that watches feedOriginal
 
       // Step 3: After feed is loaded successfully and previous_rss_load is set,
       // update this_rss_load and last_visited_at
@@ -261,7 +282,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   return (
     <FeedContext.Provider
       value={{
-        feed,
+        feed, // This is now the filtered feed
+        feedOriginal, // Original unfiltered feed data (not for UI display)
         loading,
         error,
         fetchFeed,

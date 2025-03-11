@@ -63,6 +63,7 @@ export function removeItem(key: string): void {
  * Constants for localStorage keys to avoid typos and ensure consistency
  */
 export const STORAGE_KEYS = {
-  FEED_DATA: 'rssViewerFeedData',
+  FEED_DATA_ORIGINAL: 'rssViewerFeedData_original',
+  FEED_DATA_FILTERED: 'rssViewerFeedData_filtered',
   BLOCKED_CATEGORIES: 'rssViewerBlockedCategories',
 };
