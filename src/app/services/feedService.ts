@@ -22,8 +22,8 @@ export const fetchRSSFeed = async (url: string = DEFAULT_FEED_URL): Promise<Feed
 
     const data = await response.json();
 
-    // Save original feed data to localStorage
-    setItem(STORAGE_KEYS.FEED_DATA_ORIGINAL, data);
+    // Save feed data to localStorage
+    setItem(STORAGE_KEYS.FEED_DATA, data);
 
     return data;
   } catch (err) {
