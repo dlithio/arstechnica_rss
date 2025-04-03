@@ -86,8 +86,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
     if (savedFilteredFeed) {
       setFeed(savedFilteredFeed);
-      // Initialize filteredItems directly from saved filtered feed
-      setFilteredItems(savedFilteredFeed?.items || []);
     }
   }, []);
 
@@ -218,13 +216,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     setError('');
 
     try {
-      // Immediately use the filtered items from localStorage to prevent flashing unfiltered content
-      const savedFilteredFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA_FILTERED, null);
-      if (savedFilteredFeed) {
-        // Keep showing the filtered content during loading
-        setFilteredItems(savedFilteredFeed.items || []);
-      }
-
       // Step 1: Calculate previous_rss_load before loading feed
       if (resetVisitTime) {
         const calculatedPreviousLoad = await getPreviousRssLoad();
