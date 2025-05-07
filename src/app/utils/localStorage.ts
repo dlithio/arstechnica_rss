@@ -65,4 +65,5 @@ export function removeItem(key: string): void {
 export const STORAGE_KEYS = {
   FEED_DATA: 'rssViewerFeedData',
   BLOCKED_CATEGORIES: 'rssViewerBlockedCategories',
+  BLOCKED_PHRASES: 'rssViewerBlockedPhrases',
 };

@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { useFeed } from '../contexts/FeedContext';
 
 export default function BlockedCategoriesManager() {
-  const { blockedCategories, unblockCategory, clearBlockedCategories, feed, filteredItems } =
-    useFeed();
+  const { blockedCategories, unblockCategory, clearBlockedCategories } = useFeed();
 
   const [isBlockedCategoriesOpen, setIsBlockedCategoriesOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -32,8 +31,7 @@ export default function BlockedCategoriesManager() {
     return null;
   }
 
-  const totalItems = feed?.items?.length || 0;
-  const filteredItemsCount = filteredItems.length;
+  // Stats moved to FilterStatusInfo component
 
   return (
     <div className="mt-10 rounded-lg border border-[var(--blocked-border)] bg-[var(--blocked-bg)] shadow-sm">
@@ -46,11 +44,6 @@ export default function BlockedCategoriesManager() {
           <h3 className="text-sm font-medium text-[var(--blocked-text)]">
             Blocked Categories ({blockedCategories.length})
           </h3>
-          <p className="text-xs text-[var(--blocked-text)] ml-3">
-            {totalItems > 0 &&
-              filteredItemsCount < totalItems &&
-              `${totalItems - filteredItemsCount} items hidden`}
-          </p>
         </div>
 
         {/* Chevron icon */}

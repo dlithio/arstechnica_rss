@@ -6,6 +6,7 @@ import { FeedProvider } from '../contexts/FeedContext';
 import BlockedCategoriesManager from './BlockedCategoriesManager';
 import FeedControls from './FeedControls';
 import FeedList from './FeedList';
+import FilterStatusInfo from './FilterStatusInfo';
 import HelpText from './HelpText';
 import StagedCategoriesBanner from './StagedCategoriesBanner';
 import ThemeToggle from './ThemeToggle';
@@ -33,6 +34,7 @@ function RSSFeedViewerContent() {
       <StagedCategoriesBanner />
       <FeedList />
       <BlockedCategoriesManager />
+      <FilterStatusInfo />
       <ThemeToggle />
       <HelpText />
     </div>

@@ -25,6 +25,7 @@ jest.mock('../../utils/localStorage', () => ({
   STORAGE_KEYS: {
     FEED_DATA: 'rssViewerFeedData',
     BLOCKED_CATEGORIES: 'rssViewerBlockedCategories',
+    BLOCKED_PHRASES: 'rssViewerBlockedPhrases',
   },
 }));
 
@@ -32,6 +33,16 @@ jest.mock('../../utils/localStorage', () => ({
 jest.mock('../../services/blockedCategories', () => ({
   getLatestBlockedCategories: jest.fn().mockResolvedValue([]),
   saveBlockedCategories: jest.fn().mockResolvedValue(undefined),
+}));
+
+// blockedPhrases service mock
+jest.mock('../../services/blockedPhrases', () => ({
+  getLatestBlockedPhrases: jest.fn().mockResolvedValue([]),
+  saveBlockedPhrase: jest.fn().mockResolvedValue(undefined),
+  deleteBlockedPhrase: jest.fn().mockResolvedValue(undefined),
+  clearBlockedPhrases: jest.fn().mockResolvedValue(undefined),
+  findPhraseMatches: jest.fn().mockReturnValue([]),
+  PhraseMatch: jest.fn(),
 }));
 
 // Mock fetch API
@@ -61,6 +72,11 @@ jest.mock('../StagedCategoriesBanner', () => ({
 jest.mock('../BlockedCategoriesManager', () => ({
   __esModule: true,
   default: jest.fn(() => <div data-testid="blocked-categories-manager" />),
+}));
+
+jest.mock('../BlockedPhrasesManager', () => ({
+  __esModule: true,
+  default: jest.fn(() => <div data-testid="blocked-phrases-manager" />),
 }));
 
 describe('RSSFeedViewer', () => {
