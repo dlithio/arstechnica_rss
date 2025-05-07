@@ -8,8 +8,9 @@ A Next.js application that displays and filters RSS feed content from Ars Techni
 
 - Displays articles from the Ars Technica RSS feed
 - Category-based filtering to hide unwanted topics
+- Phrase-based filtering to block content containing specific words or phrases
 - User authentication (signup/login)
-- Syncs blocked categories across devices when logged in
+- Syncs blocked categories and phrases across devices when logged in
 - Tracks article read status using "last visit" timestamps
 - Light/dark mode toggle
 - Responsive design
@@ -80,13 +81,24 @@ A Next.js application that displays and filters RSS feed content from Ars Techni
 
 ## Database Schema
 
-The app uses two tables in Supabase:
+The app uses three tables in Supabase:
 
 **blocked_categories**
 
 - `id`: UUID (primary key)
 - `user_id`: UUID (references auth.users)
 - `categories`: TEXT[] (array of blocked category names)
+- `created_at`: TIMESTAMPTZ
+- `updated_at`: TIMESTAMPTZ
+
+**blocked_phrases**
+
+- `id`: UUID (primary key)
+- `user_id`: UUID (references auth.users)
+- `phrase`: TEXT (the phrase to block)
+- `match_title`: BOOLEAN (whether to match in titles)
+- `match_content`: BOOLEAN (whether to match in content)
+- `case_sensitive`: BOOLEAN (whether matching is case-sensitive)
 - `created_at`: TIMESTAMPTZ
 - `updated_at`: TIMESTAMPTZ
 

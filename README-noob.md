@@ -4,7 +4,7 @@ This guide is designed for developers who are new to JavaScript, React, and Next
 
 ## Project Overview
 
-This application is an RSS feed reader that fetches and displays articles from Ars Technica. It allows users to filter articles by category, has user authentication, and syncs user preferences between devices.
+This application is an RSS feed reader that fetches and displays articles from Ars Technica. It allows users to filter articles by category or by specific phrases, has user authentication, and syncs user preferences between devices.
 
 ## Project Structure Explained
 
@@ -72,6 +72,10 @@ Contains React components, which are reusable UI elements (somewhat like Python 
 - `FeedItem.tsx`: Displays a single RSS feed article.
 - `FeedList.tsx`: Displays a list of feed items.
 - `AuthForm.tsx`: Handles user login/signup.
+- `BlockedCategoriesManager.tsx`: Manages category filtering.
+- `BlockedPhraseInput.tsx`: Input for entering phrases to block.
+- `BlockedPhrasesManager.tsx`: Manages phrase-based filtering.
+- `FilterStatusInfo.tsx`: Displays information about filtered content.
 - Other UI components.
 
 #### `/src/app/contexts`
@@ -79,7 +83,7 @@ Contains React components, which are reusable UI elements (somewhat like Python 
 Contains React Context providers, which manage application state:
 
 - `AuthContext.tsx`: Manages authentication state.
-- `FeedContext.tsx`: Manages RSS feed data and user preferences.
+- `FeedContext.tsx`: Manages RSS feed data, user preferences, and content filtering (both category-based and phrase-based).
 
 #### `/src/app/services`
 
@@ -87,6 +91,7 @@ Contains business logic services:
 
 - `feedService.ts`: Functions to fetch and process RSS feeds.
 - `blockedCategories.ts`: Functions to manage category filtering.
+- `blockedPhrases.ts`: Functions to manage phrase-based filtering.
 - `lastVisitService.ts`: Functions to track when users last visited.
 
 #### `/src/app/utils`
@@ -117,7 +122,7 @@ Contains static assets like images and icons.
 
 Contains database migration files for Supabase:
 
-- `migrations/*.sql`: SQL scripts that set up the database schema.
+- `migrations/*.sql`: SQL scripts that set up the database schema for tables like blocked_categories, blocked_phrases, and last_visit.
 
 ## Key JavaScript/React Concepts for Python Developers
 
