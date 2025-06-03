@@ -5,11 +5,7 @@ import { useState } from 'react';
 import { useFeed } from '../contexts/FeedContext';
 
 export default function BlockedPhrasesManager() {
-  const {
-    blockedPhrases,
-    removeBlockedPhrase,
-    clearBlockedPhrases
-  } = useFeed();
+  const { blockedPhrases, removeBlockedPhrase, clearBlockedPhrases } = useFeed();
 
   const [isBlockedPhrasesOpen, setIsBlockedPhrasesOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -95,10 +91,13 @@ export default function BlockedPhrasesManager() {
                   className="inline-flex items-center bg-[var(--blocked-tag-bg)] text-[var(--blocked-tag-text)] text-xs px-2 py-0.5 rounded-full"
                 >
                   <span className="mr-1">
-                    {phrase.phrase} 
+                    {phrase.phrase}
                     <span className="text-[0.65rem] opacity-60 ml-1">
-                      {phrase.match_title && phrase.match_content ? '(all)' : 
-                        phrase.match_title ? '(title)' : '(content)'}
+                      {phrase.match_title && phrase.match_content
+                        ? '(all)'
+                        : phrase.match_title
+                          ? '(title)'
+                          : '(content)'}
                       {phrase.case_sensitive ? ' [Aa]' : ''}
                     </span>
                   </span>

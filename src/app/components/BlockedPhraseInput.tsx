@@ -27,8 +27,10 @@ export default function BlockedPhraseInput() {
 
   return (
     <div className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-[var(--background)]">
-      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">Block Content by Phrase</h3>
-      
+      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">
+        Block Content by Phrase
+      </h3>
+
       {/* Input field */}
       <div className="mb-3">
         <div className="relative">

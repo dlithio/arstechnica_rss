@@ -37,7 +37,6 @@ export default function FeedList() {
         ))}
       </div>
 
-
       {lastVisit && (
         <div className="text-center my-6 py-2 border-t border-b border-gray-200 dark:border-gray-700">
           <span className="text-sm text-[var(--text-secondary)]">
@@ -45,10 +44,10 @@ export default function FeedList() {
           </span>
         </div>
       )}
-      
+
       {/* Add the BlockedPhraseInput between last visit and blocked phrases */}
       <BlockedPhraseInput />
-      
+
       {/* Add the BlockedPhrasesManager component showing current phrases */}
       <BlockedPhrasesManager />
     </div>

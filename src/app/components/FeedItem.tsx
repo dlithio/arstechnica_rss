@@ -25,94 +25,108 @@ export default function FeedItem({
   getPhraseMatches,
 }: FeedItemProps) {
   const [titleWithHighlights, setTitleWithHighlights] = useState<React.ReactNode>(item.title);
-  const [contentWithHighlights, setContentWithHighlights] = useState<React.ReactNode>(item.contentSnippet);
-  
+  const [contentWithHighlights, setContentWithHighlights] = useState<React.ReactNode>(
+    item.contentSnippet
+  );
+
   // Highlight text based on current search phrase input (live preview)
-  const highlightSearchPhrase = useCallback((text: string, isTitle: boolean) => {
-    if (!searchPhrase?.trim()) {
-      isTitle ? setTitleWithHighlights(text) : setContentWithHighlights(text);
-      return;
-    }
-    
-    // Simple case-insensitive search
-    const parts = text.split(new RegExp(`(${searchPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-    
-    const highlighted = (
-      <>
-        {parts.map((part, i) => 
-          part.toLowerCase() === searchPhrase?.toLowerCase() ? 
-            <mark key={i} className="bg-yellow-200 dark:bg-yellow-700">{part}</mark> : 
-            part
-        )}
-      </>
-    );
-    
-    isTitle ? setTitleWithHighlights(highlighted) : setContentWithHighlights(highlighted);
-  }, [searchPhrase]);
-  
+  const highlightSearchPhrase = useCallback(
+    (text: string, isTitle: boolean) => {
+      if (!searchPhrase?.trim()) {
+        isTitle ? setTitleWithHighlights(text) : setContentWithHighlights(text);
+        return;
+      }
+
+      // Simple case-insensitive search
+      const parts = text.split(
+        new RegExp(`(${searchPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+      );
+
+      const highlighted = (
+        <>
+          {parts.map((part, i) =>
+            part.toLowerCase() === searchPhrase?.toLowerCase() ? (
+              <mark key={i} className="bg-yellow-200 dark:bg-yellow-700">
+                {part}
+              </mark>
+            ) : (
+              part
+            )
+          )}
+        </>
+      );
+
+      isTitle ? setTitleWithHighlights(highlighted) : setContentWithHighlights(highlighted);
+    },
+    [searchPhrase]
+  );
+
   // Highlight text based on blocked phrases
-  const highlightBlockedPhrases = useCallback((text: string, matches: PhraseMatch[], isTitle: boolean) => {
-    // Sort all match indexes from all phrases
-    const allPositions: Array<{index: number, length: number}> = [];
-    
-    matches.forEach(match => {
-      match.indexes.forEach(index => {
-        allPositions.push({
-          index,
-          length: match.phrase.phrase.length
+  const highlightBlockedPhrases = useCallback(
+    (text: string, matches: PhraseMatch[], isTitle: boolean) => {
+      // Sort all match indexes from all phrases
+      const allPositions: Array<{ index: number; length: number }> = [];
+
+      matches.forEach((match) => {
+        match.indexes.forEach((index) => {
+          allPositions.push({
+            index,
+            length: match.phrase.phrase.length,
+          });
         });
       });
-    });
-    
-    // Sort positions by index
-    allPositions.sort((a, b) => a.index - b.index);
-    
-    // Merge overlapping highlight positions
-    const mergedPositions: Array<{start: number, end: number}> = [];
-    
-    for (const pos of allPositions) {
-      const currentEnd = pos.index + pos.length;
-      
-      if (mergedPositions.length === 0) {
-        mergedPositions.push({ start: pos.index, end: currentEnd });
-      } else {
-        // Since we've already checked that length is > 0, this is safe to assert
-        const lastPosition = mergedPositions[mergedPositions.length - 1]!;
-        if (pos.index > lastPosition.end) {
+
+      // Sort positions by index
+      allPositions.sort((a, b) => a.index - b.index);
+
+      // Merge overlapping highlight positions
+      const mergedPositions: Array<{ start: number; end: number }> = [];
+
+      for (const pos of allPositions) {
+        const currentEnd = pos.index + pos.length;
+
+        if (mergedPositions.length === 0) {
           mergedPositions.push({ start: pos.index, end: currentEnd });
         } else {
-          lastPosition.end = Math.max(lastPosition.end, currentEnd);
+          // Since we've already checked that length is > 0, this is safe to assert
+          const lastPosition = mergedPositions[mergedPositions.length - 1]!;
+          if (pos.index > lastPosition.end) {
+            mergedPositions.push({ start: pos.index, end: currentEnd });
+          } else {
+            lastPosition.end = Math.max(lastPosition.end, currentEnd);
+          }
         }
       }
-    }
-    
-    // Build highlighted content
-    let lastIndex = 0;
-    const parts: React.ReactNode[] = [];
-    
-    mergedPositions.forEach((pos, i) => {
-      // Add text before highlight
-      if (pos.start > lastIndex) {
-        parts.push(text.substring(lastIndex, pos.start));
+
+      // Build highlighted content
+      let lastIndex = 0;
+      const parts: React.ReactNode[] = [];
+
+      mergedPositions.forEach((pos, i) => {
+        // Add text before highlight
+        if (pos.start > lastIndex) {
+          parts.push(text.substring(lastIndex, pos.start));
+        }
+
+        // Add highlighted part
+        parts.push(
+          <mark key={`mark-${i}`} className="bg-yellow-200 dark:bg-yellow-700">
+            {text.substring(pos.start, pos.end)}
+          </mark>
+        );
+
+        lastIndex = pos.end;
+      });
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        parts.push(text.substring(lastIndex));
       }
-      
-      // Add highlighted part
-      parts.push(
-        <mark key={`mark-${i}`} className="bg-yellow-200 dark:bg-yellow-700">
-          {text.substring(pos.start, pos.end)}
-        </mark>
-      );
-      
-      lastIndex = pos.end;
-    });
-    
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-    
-    isTitle ? setTitleWithHighlights(<>{parts}</>) : setContentWithHighlights(<>{parts}</>);
-  }, []);
+
+      isTitle ? setTitleWithHighlights(<>{parts}</>) : setContentWithHighlights(<>{parts}</>);
+    },
+    []
+  );
 
   // Update highlighting when search phrase changes
   useEffect(() => {
@@ -131,7 +145,7 @@ export default function FeedItem({
         }
       }
     }
-    
+
     // Handle content highlighting
     if (item.contentSnippet) {
       if (searchPhrase?.trim()) {
@@ -148,13 +162,13 @@ export default function FeedItem({
       }
     }
   }, [
-    item, 
-    searchPhrase, 
-    getPhraseMatches, 
-    highlightSearchPhrase, 
-    highlightBlockedPhrases, 
-    setTitleWithHighlights, 
-    setContentWithHighlights
+    item,
+    searchPhrase,
+    getPhraseMatches,
+    highlightSearchPhrase,
+    highlightBlockedPhrases,
+    setTitleWithHighlights,
+    setContentWithHighlights,
   ]);
 
   const isPreviouslySeen = (): boolean => {
@@ -164,7 +178,7 @@ export default function FeedItem({
   };
 
   const seen = isPreviouslySeen();
-  
+
   return (
     <article
       className={`py-4 ${seen ? 'opacity-60 hover:opacity-100 transition-opacity border-l-4 border-l-gray-300 dark:border-l-gray-600 pl-2' : ''}`}

@@ -187,7 +187,7 @@ export const getLatestBlockedPhrases = async (
 
 /**
  * Checks if a string matches any of the blocked phrases
- * 
+ *
  * @param text The text to check
  * @param blockedPhrases Array of BlockedPhrase objects to check against
  * @param isTitle Whether the text is a title (for match_title check)
@@ -204,22 +204,22 @@ export const findPhraseMatches = (
   isTitle: boolean
 ): PhraseMatch[] => {
   if (!text) return [];
-  
+
   const matches: PhraseMatch[] = [];
-  
+
   for (const phrase of blockedPhrases) {
     // Skip if targeting title but this is content, or vice versa
     if ((isTitle && !phrase.match_title) || (!isTitle && !phrase.match_content)) {
       continue;
     }
-    
+
     const searchPhrase = phrase.phrase;
     const searchText = phrase.case_sensitive ? text : text.toLowerCase();
     const searchTerm = phrase.case_sensitive ? searchPhrase : searchPhrase.toLowerCase();
-    
+
     let pos = 0;
     const indexes: number[] = [];
-    
+
     while (pos !== -1) {
       pos = searchText.indexOf(searchTerm, pos);
       if (pos !== -1) {
@@ -227,14 +227,14 @@ export const findPhraseMatches = (
         pos += searchTerm.length;
       }
     }
-    
+
     if (indexes.length > 0) {
       matches.push({
         phrase,
-        indexes
+        indexes,
       });
     }
   }
-  
+
   return matches;
 };

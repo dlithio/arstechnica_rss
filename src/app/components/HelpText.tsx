@@ -11,8 +11,9 @@ export default function HelpText() {
       }}
     >
       <p>
-        <strong>Tip:</strong> Click on article category bubbles to block unwanted topics or enter a phrase to block above. Sign in to
-        sync your blocked categories and article seen status across devices.
+        <strong>Tip:</strong> Click on article category bubbles to block unwanted topics or enter a
+        phrase to block above. Sign in to sync your blocked categories and article seen status
+        across devices.
       </p>
     </div>
   );

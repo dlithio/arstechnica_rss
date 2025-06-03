@@ -1,17 +1,17 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { Feed, FeedItem } from '../../types/feed';
 import { getLatestBlockedCategories, saveBlockedCategories } from '../services/blockedCategories';
-import { 
-  BlockedPhrase, 
-  clearBlockedPhrases, 
-  deleteBlockedPhrase, 
-  findPhraseMatches, 
-  getLatestBlockedPhrases, 
-  PhraseMatch, 
-  saveBlockedPhrase 
+import {
+  BlockedPhrase,
+  clearBlockedPhrases,
+  deleteBlockedPhrase,
+  findPhraseMatches,
+  getLatestBlockedPhrases,
+  PhraseMatch,
+  saveBlockedPhrase,
 } from '../services/blockedPhrases';
 import { DEFAULT_FEED_URL, fetchRSSFeed } from '../services/feedService';
 import {
@@ -41,7 +41,7 @@ interface FeedContextType {
   applyBlockedCategories: () => Promise<void>;
   unblockCategory: (category: string) => Promise<void>;
   clearBlockedCategories: (e?: React.MouseEvent) => Promise<void>;
-  
+
   // Phrase management
   blockedPhrases: BlockedPhrase[];
   searchPhrase: string;
@@ -63,6 +63,7 @@ const FeedContext = createContext<FeedContextType | undefined>(undefined);
 export function FeedProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Initialize state
   const [feed, setFeed] = useState<Feed | null>(null);
@@ -72,14 +73,14 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const [stagedCategories, setStagedCategories] = useState<string[]>([]); // Categories staged for blocking
   const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [syncingPreferences, setSyncingPreferences] = useState(false);
-  
+
   // Blocked phrases state
   const [blockedPhrases, setBlockedPhrases] = useState<BlockedPhrase[]>([]);
   const [searchPhrase, setSearchPhrase] = useState('');
   const [searchMatchTitle, setSearchMatchTitle] = useState(true);
   const [searchMatchContent, setSearchMatchContent] = useState(true);
   const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
-  
+
   // Initialize previousRssLoad with localStorage data immediately
   const [previousRssLoad, setPreviousRssLoad] = useState<Date | null>(() => {
     if (typeof window !== 'undefined') {
@@ -96,7 +97,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         // Load categories
         const categories = await getLatestBlockedCategories(user?.id);
         setBlockedCategories(categories);
-        
+
         // Load phrases
         const phrases = await getLatestBlockedPhrases(user?.id);
         setBlockedPhrases(phrases);
@@ -115,85 +116,102 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     const savedFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA, null);
     if (savedFeed) {
       setFeed(savedFeed);
+      // Apply filtering immediately to prevent race condition
+      const filtered = filterAndSortItems(savedFeed);
+      setFilteredItems(filtered);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Helper function to check if a FeedItem should be filtered by blocked phrases
-  const isItemFilteredByBlockedPhrases = useCallback((item: FeedItem): boolean => {
-    for (const phrase of blockedPhrases) {
-      // Check title if match_title is true
-      if (phrase.match_title && item.title) {
-        const searchText = phrase.case_sensitive ? item.title : item.title.toLowerCase();
-        const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
-        if (searchText.includes(searchTerm)) {
-          return true;
+  const isItemFilteredByBlockedPhrases = useCallback(
+    (item: FeedItem): boolean => {
+      for (const phrase of blockedPhrases) {
+        // Check title if match_title is true
+        if (phrase.match_title && item.title) {
+          const searchText = phrase.case_sensitive ? item.title : item.title.toLowerCase();
+          const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
+          if (searchText.includes(searchTerm)) {
+            return true;
+          }
+        }
+
+        // Check content if match_content is true
+        if (phrase.match_content && (item.content || item.contentSnippet)) {
+          const content = item.content || item.contentSnippet || '';
+          const searchText = phrase.case_sensitive ? content : content.toLowerCase();
+          const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
+          if (searchText.includes(searchTerm)) {
+            return true;
+          }
         }
       }
-      
-      // Check content if match_content is true
-      if (phrase.match_content && (item.content || item.contentSnippet)) {
-        const content = item.content || item.contentSnippet || '';
-        const searchText = phrase.case_sensitive ? content : content.toLowerCase();
-        const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
-        if (searchText.includes(searchTerm)) {
-          return true;
-        }
+
+      return false;
+    },
+    [blockedPhrases]
+  );
+
+  // Helper function to filter and sort feed items
+  const filterAndSortItems = useCallback(
+    (feedData: Feed | null): FeedItem[] => {
+      if (!feedData) {
+        return [];
       }
-    }
-    
-    return false;
-  }, [blockedPhrases]);
+
+      // Filter out items that have any blocked category or blocked phrase
+      const filtered = feedData.items.filter((item) => {
+        // First check categories
+        if (item.categories && item.categories.length > 0) {
+          // If any category is blocked, filter out the item
+          if (item.categories.some((category) => blockedCategories.includes(category))) {
+            return false;
+          }
+        }
+
+        // Then check for blocked phrases
+        if (isItemFilteredByBlockedPhrases(item)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      // Sort items based on pubDate and seen status
+      const sorted = [...filtered].sort((a, b) => {
+        if (!a.pubDate || !b.pubDate) return 0;
+
+        const dateA = new Date(a.pubDate);
+        const dateB = new Date(b.pubDate);
+
+        // Check if items are seen or not using previousRssLoad
+        const aIsSeen = previousRssLoad ? dateA < previousRssLoad : false;
+        const bIsSeen = previousRssLoad ? dateB < previousRssLoad : false;
+
+        // New items first, then by date (newest to oldest)
+        if (aIsSeen !== bIsSeen) {
+          return aIsSeen ? 1 : -1; // New items (not seen) first
+        }
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      });
+
+      return sorted;
+    },
+    [blockedCategories, blockedPhrases, previousRssLoad, isItemFilteredByBlockedPhrases]
+  );
 
   // Get phrase matches for a specific text
-  const getPhraseMatches = useCallback((text: string | undefined, isTitle: boolean): PhraseMatch[] => {
-    return findPhraseMatches(text, blockedPhrases, isTitle);
-  }, [blockedPhrases]);
+  const getPhraseMatches = useCallback(
+    (text: string | undefined, isTitle: boolean): PhraseMatch[] => {
+      return findPhraseMatches(text, blockedPhrases, isTitle);
+    },
+    [blockedPhrases]
+  );
 
   // Filter items whenever feed, blocked categories, or blocked phrases change
   useEffect(() => {
-    if (!feed) {
-      setFilteredItems([]);
-      return;
-    }
-
-    // Filter out items that have any blocked category or blocked phrase
-    const filtered = feed.items.filter((item) => {
-      // First check categories
-      if (item.categories && item.categories.length > 0) {
-        // If any category is blocked, filter out the item
-        if (item.categories.some((category) => blockedCategories.includes(category))) {
-          return false;
-        }
-      }
-      
-      // Then check for blocked phrases
-      if (isItemFilteredByBlockedPhrases(item)) {
-        return false;
-      }
-      
-      return true;
-    });
-
-    // Sort items based on pubDate and seen status
-    const sorted = [...filtered].sort((a, b) => {
-      if (!a.pubDate || !b.pubDate) return 0;
-
-      const dateA = new Date(a.pubDate);
-      const dateB = new Date(b.pubDate);
-
-      // Check if items are seen or not using previousRssLoad
-      const aIsSeen = previousRssLoad ? dateA < previousRssLoad : false;
-      const bIsSeen = previousRssLoad ? dateB < previousRssLoad : false;
-
-      // New items first, then by date (newest to oldest)
-      if (aIsSeen !== bIsSeen) {
-        return aIsSeen ? 1 : -1; // New items (not seen) first
-      }
-      return dateB.getTime() - dateA.getTime(); // Newest first
-    });
-
-    setFilteredItems(sorted);
-  }, [feed, blockedCategories, blockedPhrases, previousRssLoad, isItemFilteredByBlockedPhrases]);
+    const filtered = filterAndSortItems(feed);
+    setFilteredItems(filtered);
+  }, [feed, blockedCategories, blockedPhrases, previousRssLoad, filterAndSortItems]);
 
   // Stage a category for blocking (doesn't apply immediately)
   const stageCategory = (category: string) => {
@@ -269,11 +287,11 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       console.error('Error clearing blocked categories:', err);
     }
   };
-  
+
   // Add a new blocked phrase
   const addBlockedPhrase = async () => {
     if (!searchPhrase.trim()) return;
-    
+
     try {
       const newPhrase: BlockedPhrase = {
         user_id: user?.id || 'anonymous',
@@ -282,13 +300,13 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         match_content: searchMatchContent,
         case_sensitive: searchCaseSensitive,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      
+
       // Save to Supabase if user is logged in
       if (user) {
         await saveBlockedPhrase(newPhrase);
-        
+
         // Refresh from server to get the assigned ID
         const phrases = await getLatestBlockedPhrases(user.id);
         setBlockedPhrases(phrases);
@@ -297,32 +315,32 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         const clientId = `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const phraseWithId = {
           ...newPhrase,
-          id: clientId
+          id: clientId,
         };
-        
+
         const updatedPhrases = [...blockedPhrases, phraseWithId];
         setBlockedPhrases(updatedPhrases);
         setItem(STORAGE_KEYS.BLOCKED_PHRASES, updatedPhrases);
       }
-      
+
       // Clear the input field
       setSearchPhrase('');
     } catch (err) {
       console.error('Error adding blocked phrase:', err);
     }
   };
-  
+
   // Remove a blocked phrase
   const removeBlockedPhrase = async (phraseId: string) => {
     try {
       if (user) {
         await deleteBlockedPhrase(user.id, phraseId);
       }
-      
+
       // Update state regardless of whether user is logged in
-      const updatedPhrases = blockedPhrases.filter(p => p.id !== phraseId);
+      const updatedPhrases = blockedPhrases.filter((p) => p.id !== phraseId);
       setBlockedPhrases(updatedPhrases);
-      
+
       // Update localStorage for anonymous users
       if (!user) {
         setItem(STORAGE_KEYS.BLOCKED_PHRASES, updatedPhrases);
@@ -331,7 +349,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       console.error('Error removing blocked phrase:', err);
     }
   };
-  
+
   // Clear all blocked phrases
   const clearAllBlockedPhrases = async () => {
     try {
@@ -339,10 +357,10 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       if (user) {
         await clearBlockedPhrases(user.id);
       }
-      
+
       // Clear from state
       setBlockedPhrases([]);
-      
+
       // Clear from localStorage for anonymous users
       if (!user) {
         setItem(STORAGE_KEYS.BLOCKED_PHRASES, []);
@@ -352,36 +370,43 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchFeed = useCallback(async (resetVisitTime = false) => {
-    setLoading(true);
-    setError('');
+  const fetchFeed = useCallback(
+    async (resetVisitTime = false) => {
+      setLoading(true);
+      setError('');
 
-    try {
-      // Step 1: Calculate previous_rss_load before loading feed
-      if (resetVisitTime) {
-        const calculatedPreviousLoad = await getPreviousRssLoad();
-        setPreviousRssLoad(calculatedPreviousLoad);
+      try {
+        // Step 1: Calculate previous_rss_load before loading feed
+        if (resetVisitTime) {
+          const calculatedPreviousLoad = await getPreviousRssLoad();
+          setPreviousRssLoad(calculatedPreviousLoad);
+        }
+
+        // Step 2: Load the RSS feed
+        const data = await fetchRSSFeed(DEFAULT_FEED_URL);
+        setFeed(data);
+
+        // Apply filtering immediately to prevent race condition
+        const filtered = filterAndSortItems(data);
+        setFilteredItems(filtered);
+
+        // Save feed data to localStorage
+        setItem(STORAGE_KEYS.FEED_DATA, data);
+
+        // Step 3: After feed is loaded successfully and previous_rss_load is set,
+        // update this_rss_load and last_visited_at
+        if (resetVisitTime) {
+          await updateCurrentRssLoadTime();
+        }
+      } catch (err) {
+        setError('Error fetching RSS feed. Please try again later.');
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-
-      // Step 2: Load the RSS feed
-      const data = await fetchRSSFeed(DEFAULT_FEED_URL);
-      setFeed(data);
-
-      // Save feed data to localStorage
-      setItem(STORAGE_KEYS.FEED_DATA, data);
-
-      // Step 3: After feed is loaded successfully and previous_rss_load is set,
-      // update this_rss_load and last_visited_at
-      if (resetVisitTime) {
-        await updateCurrentRssLoadTime();
-      }
-    } catch (err) {
-      setError('Error fetching RSS feed. Please try again later.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [filterAndSortItems]
+  );
 
   // Load previous_rss_load only on initial component mount
   useEffect(() => {
@@ -400,10 +425,17 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     }
   }, [user, previousRssLoad]);
 
-  // Auto-fetch feed on initial load
+  // Auto-fetch feed on initial load - only once
   useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+    if (hasFetchedRef.current) {
+      return;
+    }
+    hasFetchedRef.current = true;
     fetchFeed(true); // Set resetVisitTime to true to properly initialize both timestamps
-  }, [fetchFeed]);
+  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // We no longer automatically update on component mount
   // Instead, we only update after feed is loaded and previous_rss_load is calculated
@@ -436,7 +468,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         applyBlockedCategories,
         unblockCategory,
         clearBlockedCategories,
-        
+
         // Blocked phrases
         blockedPhrases,
         searchPhrase,
@@ -445,7 +477,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         setSearchMatchTitle,
         searchMatchContent,
         setSearchMatchContent,
-        searchCaseSensitive, 
+        searchCaseSensitive,
         setSearchCaseSensitive,
         addBlockedPhrase,
         removeBlockedPhrase,
