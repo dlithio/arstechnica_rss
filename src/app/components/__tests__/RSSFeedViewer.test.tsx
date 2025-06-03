@@ -23,7 +23,6 @@ jest.mock('../../utils/localStorage', () => ({
   setItem: jest.fn(),
   removeItem: jest.fn(),
   STORAGE_KEYS: {
-    FEED_DATA: 'rssViewerFeedData',
     BLOCKED_CATEGORIES: 'rssViewerBlockedCategories',
     BLOCKED_PHRASES: 'rssViewerBlockedPhrases',
   },
@@ -104,6 +103,6 @@ describe('RSSFeedViewer', () => {
       render(<RSSFeedViewer />);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/fetchRSS'));
+    expect(global.fetch).toHaveBeenCalledWith('/api/fetchFilteredRSS', expect.any(Object));
   });
 });

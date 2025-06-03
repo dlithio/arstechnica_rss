@@ -9,7 +9,6 @@ import FeedItemComponent from './FeedItem';
 export default function FeedList() {
   const {
     feed,
-    filteredItems,
     blockedCategories,
     stagedCategories,
     stageCategory,
@@ -23,7 +22,7 @@ export default function FeedList() {
   return (
     <div>
       <div className="divide-y divide-gray-200 dark:divide-gray-800">
-        {filteredItems.map((item, index) => (
+        {feed.items.map((item, index) => (
           <FeedItemComponent
             key={index}
             item={item}

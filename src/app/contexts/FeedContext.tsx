@@ -13,13 +13,13 @@ import {
   PhraseMatch,
   saveBlockedPhrase,
 } from '../services/blockedPhrases';
-import { DEFAULT_FEED_URL, fetchRSSFeed } from '../services/feedService';
+import { DEFAULT_FEED_URL, fetchFilteredRSSFeed } from '../services/feedService';
 import {
   getPreviousRssLoad,
   getPreviousRssLoadFromLocalStorage,
   updateCurrentRssLoadTime,
 } from '../services/lastVisitService';
-import { getItem, setItem, STORAGE_KEYS } from '../utils/localStorage';
+import { setItem, STORAGE_KEYS } from '../utils/localStorage';
 import { useAuth } from './AuthContext';
 
 interface FeedContextType {
@@ -28,7 +28,6 @@ interface FeedContextType {
   loading: boolean;
   error: string;
   fetchFeed: (resetVisitTime?: boolean) => Promise<void>;
-  filteredItems: FeedItem[];
   lastVisit: Date | null;
 
   // Category management
@@ -64,6 +63,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const hasFetchedRef = useRef(false);
+  const fetchInProgressRef = useRef(false);
 
   // Initialize state
   const [feed, setFeed] = useState<Feed | null>(null);
@@ -71,7 +71,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('');
   const [blockedCategories, setBlockedCategories] = useState<string[]>([]);
   const [stagedCategories, setStagedCategories] = useState<string[]>([]); // Categories staged for blocking
-  const [filteredItems, setFilteredItems] = useState<FeedItem[]>([]);
   const [syncingPreferences, setSyncingPreferences] = useState(false);
 
   // Blocked phrases state
@@ -94,6 +93,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     async function loadBlockedPreferences() {
       setSyncingPreferences(true);
       try {
+        console.log('[FeedContext] Loading blocked preferences...');
         // Load categories
         const categories = await getLatestBlockedCategories(user?.id);
         setBlockedCategories(categories);
@@ -101,6 +101,11 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         // Load phrases
         const phrases = await getLatestBlockedPhrases(user?.id);
         setBlockedPhrases(phrases);
+        
+        console.log('[FeedContext] Blocked preferences loaded:', {
+          categories: categories.length,
+          phrases: phrases.length
+        });
       } catch (err) {
         console.error('Error loading blocked preferences:', err);
       } finally {
@@ -111,73 +116,13 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     loadBlockedPreferences();
   }, [user]);
 
-  // Load feed data from localStorage on initial render
-  useEffect(() => {
-    const savedFeed = getItem<Feed | null>(STORAGE_KEYS.FEED_DATA, null);
-    if (savedFeed) {
-      setFeed(savedFeed);
-      // Apply filtering immediately to prevent race condition
-      const filtered = filterAndSortItems(savedFeed);
-      setFilteredItems(filtered);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: We no longer load feed from localStorage as it's always fetched filtered from server
 
-  // Helper function to check if a FeedItem should be filtered by blocked phrases
-  const isItemFilteredByBlockedPhrases = useCallback(
-    (item: FeedItem): boolean => {
-      for (const phrase of blockedPhrases) {
-        // Check title if match_title is true
-        if (phrase.match_title && item.title) {
-          const searchText = phrase.case_sensitive ? item.title : item.title.toLowerCase();
-          const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
-          if (searchText.includes(searchTerm)) {
-            return true;
-          }
-        }
 
-        // Check content if match_content is true
-        if (phrase.match_content && (item.content || item.contentSnippet)) {
-          const content = item.content || item.contentSnippet || '';
-          const searchText = phrase.case_sensitive ? content : content.toLowerCase();
-          const searchTerm = phrase.case_sensitive ? phrase.phrase : phrase.phrase.toLowerCase();
-          if (searchText.includes(searchTerm)) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    },
-    [blockedPhrases]
-  );
-
-  // Helper function to filter and sort feed items
-  const filterAndSortItems = useCallback(
-    (feedData: Feed | null): FeedItem[] => {
-      if (!feedData) {
-        return [];
-      }
-
-      // Filter out items that have any blocked category or blocked phrase
-      const filtered = feedData.items.filter((item) => {
-        // First check categories
-        if (item.categories && item.categories.length > 0) {
-          // If any category is blocked, filter out the item
-          if (item.categories.some((category) => blockedCategories.includes(category))) {
-            return false;
-          }
-        }
-
-        // Then check for blocked phrases
-        if (isItemFilteredByBlockedPhrases(item)) {
-          return false;
-        }
-
-        return true;
-      });
-
-      // Sort items based on pubDate and seen status
-      const sorted = [...filtered].sort((a, b) => {
+  // Helper function to sort feed items based on seen status
+  const sortFeedItems = useCallback(
+    (items: FeedItem[]): FeedItem[] => {
+      return [...items].sort((a, b) => {
         if (!a.pubDate || !b.pubDate) return 0;
 
         const dateA = new Date(a.pubDate);
@@ -193,10 +138,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         }
         return dateB.getTime() - dateA.getTime(); // Newest first
       });
-
-      return sorted;
     },
-    [blockedCategories, blockedPhrases, previousRssLoad, isItemFilteredByBlockedPhrases]
+    [previousRssLoad]
   );
 
   // Get phrase matches for a specific text
@@ -207,11 +150,13 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     [blockedPhrases]
   );
 
-  // Filter items whenever feed, blocked categories, or blocked phrases change
+  // Sort items whenever feed or previousRssLoad changes
   useEffect(() => {
-    const filtered = filterAndSortItems(feed);
-    setFilteredItems(filtered);
-  }, [feed, blockedCategories, blockedPhrases, previousRssLoad, filterAndSortItems]);
+    if (feed) {
+      const sorted = sortFeedItems(feed.items);
+      setFeed({ ...feed, items: sorted });
+    }
+  }, [previousRssLoad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stage a category for blocking (doesn't apply immediately)
   const stageCategory = (category: string) => {
@@ -238,6 +183,12 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       ...blockedCategories,
       ...stagedCategories.filter((c) => !blockedCategories.includes(c)),
     ];
+
+    console.log('[FeedContext] Applying blocked categories:', {
+      existing: blockedCategories,
+      staged: stagedCategories,
+      new: newBlockedCategories
+    });
 
     setBlockedCategories(newBlockedCategories);
     setStagedCategories([]); // Clear staged categories
@@ -303,6 +254,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         updated_at: new Date().toISOString(),
       };
 
+      console.log('[FeedContext] Adding blocked phrase:', newPhrase);
+
       // Save to Supabase if user is logged in
       if (user) {
         await saveBlockedPhrase(newPhrase);
@@ -321,6 +274,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         const updatedPhrases = [...blockedPhrases, phraseWithId];
         setBlockedPhrases(updatedPhrases);
         setItem(STORAGE_KEYS.BLOCKED_PHRASES, updatedPhrases);
+        console.log('[FeedContext] Updated blocked phrases for anonymous user:', updatedPhrases);
       }
 
       // Clear the input field
@@ -372,6 +326,13 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
   const fetchFeed = useCallback(
     async (resetVisitTime = false) => {
+      // Prevent duplicate fetches
+      if (fetchInProgressRef.current) {
+        console.log('[FeedContext] Fetch already in progress, skipping...');
+        return;
+      }
+      
+      fetchInProgressRef.current = true;
       setLoading(true);
       setError('');
 
@@ -382,16 +343,33 @@ export function FeedProvider({ children }: { children: ReactNode }) {
           setPreviousRssLoad(calculatedPreviousLoad);
         }
 
-        // Step 2: Load the RSS feed
-        const data = await fetchRSSFeed(DEFAULT_FEED_URL);
-        setFeed(data);
+        // Step 2: Wait for blocked preferences to be loaded
+        // This ensures filters are ready before fetching
+        while (syncingPreferences) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
 
-        // Apply filtering immediately to prevent race condition
-        const filtered = filterAndSortItems(data);
-        setFilteredItems(filtered);
-
-        // Save feed data to localStorage
-        setItem(STORAGE_KEYS.FEED_DATA, data);
+        // Step 3: Load the RSS feed with server-side filtering
+        console.log('[FeedContext] Fetching with filters:', {
+          userId: user?.id,
+          blockedCategories,
+          blockedPhrases: blockedPhrases.length
+        });
+        
+        const data = await fetchFilteredRSSFeed(
+          DEFAULT_FEED_URL,
+          user?.id,
+          blockedCategories,
+          blockedPhrases
+        );
+        
+        // Sort the filtered items
+        const sortedData = {
+          ...data,
+          items: sortFeedItems(data.items)
+        };
+        
+        setFeed(sortedData);
 
         // Step 3: After feed is loaded successfully and previous_rss_load is set,
         // update this_rss_load and last_visited_at
@@ -403,9 +381,10 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         console.error(err);
       } finally {
         setLoading(false);
+        fetchInProgressRef.current = false;
       }
     },
-    [filterAndSortItems]
+    [blockedCategories, blockedPhrases, user, syncingPreferences, sortFeedItems]
   );
 
   // Load previous_rss_load only on initial component mount
@@ -433,9 +412,23 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     if (hasFetchedRef.current) {
       return;
     }
+    if (syncingPreferences) {
+      // Wait for preferences to load before fetching
+      return;
+    }
     hasFetchedRef.current = true;
+    console.log('[FeedContext] Initial fetch triggered');
     fetchFeed(true); // Set resetVisitTime to true to properly initialize both timestamps
-  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mounted, syncingPreferences]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch feed when blocked categories or phrases change
+  useEffect(() => {
+    // Only re-fetch if we've already fetched once and filters have changed
+    if (hasFetchedRef.current && !syncingPreferences && mounted) {
+      console.log('[FeedContext] Filters changed, re-fetching feed...');
+      fetchFeed(false);
+    }
+  }, [blockedCategories, blockedPhrases]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // We no longer automatically update on component mount
   // Instead, we only update after feed is loaded and previous_rss_load is calculated
@@ -457,7 +450,6 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         fetchFeed,
-        filteredItems,
         lastVisit: previousRssLoad, // Use previousRssLoad but keep the same prop name for compatibility
         blockedCategories,
         stagedCategories,

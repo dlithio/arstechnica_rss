@@ -22,4 +22,9 @@ export type Feed = {
   title?: string;
   description?: string;
   items: FeedItem[];
+  filterStats?: {
+    totalItems: number;
+    filteredItems: number;
+    blockedCount: number;
+  };
 };

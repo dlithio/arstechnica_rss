@@ -3,14 +3,12 @@
 import { useFeed } from '../contexts/FeedContext';
 
 export default function FilterStatusInfo() {
-  const { feed, filteredItems } = useFeed();
+  const { feed } = useFeed();
 
-  const totalItems = feed?.items?.length || 0;
-  const filteredItemsCount = filteredItems.length;
-  const hiddenItemsCount = totalItems - filteredItemsCount;
+  const hiddenItemsCount = feed?.filterStats?.blockedCount || 0;
 
   // Only show if there are actually items being hidden by filters
-  if (totalItems === 0 || hiddenItemsCount <= 0) {
+  if (hiddenItemsCount <= 0) {
     return null;
   }
 
